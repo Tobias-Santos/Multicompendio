@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/api/systemsApi.ts","./src/components/AddAttributeForm.tsx","./src/components/AttributesTable.tsx","./src/components/SystemForm.tsx","./src/components/SystemList.tsx","./src/components/SystemPropertiesForm.tsx","./src/pages/HomePage.tsx","./src/pages/SystemPage.tsx","./src/types/system.ts"],"version":"5.9.3"}
