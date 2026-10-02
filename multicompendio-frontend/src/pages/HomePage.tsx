@@ -32,10 +32,7 @@ export function HomePage() {
     <div className="layout">
       <header>
         <h1>Multicompêndio — Sistemas de RPG</h1>
-        <p className="muted">
-          Cadastro rápido aqui; versão, proprietário, pré-configurado e atributos ficam na página
-          de cada sistema.
-        </p>
+        <p className="muted">Cadastre um novo sistema e depois abra-o para configurar os detalhes.</p>
       </header>
 
       {error && <p className="error">{error}</p>}

@@ -16,14 +16,24 @@ export function SystemList({ systems, onDelete }: Props) {
       {systems.map((system) => (
         <li key={system.id}>
           <Link to={`/systems/${system.id}`} className="system-list-link">
-            <strong>
-              {system.name}
-              {system.version && <span className="muted"> — v{system.version}</span>}
-            </strong>
-            {system.description && <p className="muted">{system.description}</p>}
+            {system.image_url ? (
+              <img src={system.image_url} alt="" className="system-entry-cover" />
+            ) : (
+              <div className="system-entry-cover-placeholder" aria-hidden="true">
+                {system.name.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div className="system-entry-text">
+              <h3>
+                {system.name}
+                {system.version && <span className="muted"> — {system.version}</span>}
+              </h3>
+              {system.description && <p className="muted">{system.description}</p>}
+            </div>
           </Link>
           <button
             type="button"
+            className="danger"
             onClick={(e) => {
               e.preventDefault();
               onDelete(system.id);

@@ -1,11 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=Work+Sans:wght@400;500;600;700&display=swap');
+
+/* ============================================================
+   Multicompêndio — identidade visual
+   Conceito: cada sistema de RPG é uma ENTRADA do compêndio — como
+   uma seção catalogada, marcada por uma aba vertical colorida
+   (como uma aba de índice), não um "livro antigo" ornamentado.
+   Serifada (Fraunces) só no nome do app e dos sistemas; o resto da
+   interface é sans-serif (Work Sans), limpo e moderno.
+   ============================================================ */
+
 :root {
-  --ink: #2b241b;
-  --parchment: #f6f1e6;
-  --parchment-dark: #ece3d0;
-  --accent: #7a3b2e;
-  --border: #d8cbab;
-  --danger: #a13d2e;
-  font-family: 'Georgia', 'Iowan Old Style', serif;
+  --bg: #fffaf3;
+  --surface: #fff2db;
+  --border: #ffe5bf;
+  --accent: #f62440;
+  --accent-ink: #ffffff;
+  --ink: #241a14;
+  --muted: #8a7968;
+
+  --font-display: 'Fraunces', 'Georgia', serif;
+  --font-body: 'Work Sans', system-ui, -apple-system, sans-serif;
 }
 
 * {
@@ -14,30 +28,41 @@
 
 body {
   margin: 0;
-  background: var(--parchment);
+  background: var(--bg);
   color: var(--ink);
+  font-family: var(--font-body);
 }
 
 .layout {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1.5rem 4rem;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+header {
+  margin-bottom: 0.5rem;
 }
 
 header h1 {
-  font-size: 1.6rem;
-  margin-bottom: 0.25rem;
-  letter-spacing: 0.01em;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 2rem;
+  margin: 0.4rem 0 0.3rem;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: var(--accent);
 }
 
 .muted {
-  color: #6b6152;
+  color: var(--muted);
   font-size: 0.9rem;
 }
 
 .error {
-  color: var(--danger);
-  font-weight: bold;
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .columns {
@@ -69,21 +94,27 @@ header h1 {
 }
 
 .card {
-  background: white;
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 1.25rem;
+  border-radius: 10px;
+  padding: 1.4rem;
+}
+
+h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.25rem;
 }
 
 .card h2 {
   margin-top: 0;
-  font-size: 1.15rem;
 }
 
 label {
   display: block;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
   font-size: 0.9rem;
+  font-weight: 500;
 }
 
 input,
@@ -91,22 +122,43 @@ textarea,
 select {
   display: block;
   width: 100%;
-  margin-top: 0.25rem;
-  padding: 0.45rem 0.5rem;
+  margin-top: 0.3rem;
+  padding: 0.55rem 0.65rem;
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 6px;
   font-family: inherit;
   font-size: 0.95rem;
-  background: var(--parchment);
+  background: var(--bg);
+  color: var(--ink);
+  text-overflow: ellipsis;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+::placeholder {
+  font-size: 0.88em;
+  opacity: 0.6;
 }
 
 .attribute-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.6rem;
   align-items: center;
-  padding: 0.6rem 0;
+  padding: 0.75rem 0;
   border-bottom: 1px dashed var(--border);
+}
+
+.attribute-row input,
+.attribute-row select {
+  font-size: 0.82rem;
+  padding: 0.45rem 0.45rem;
+  text-overflow: ellipsis;
 }
 
 .attribute-row .checkbox {
@@ -114,6 +166,7 @@ select {
   align-items: center;
   gap: 0.35rem;
   font-size: 0.85rem;
+  font-weight: 400;
 }
 
 .attribute-row .checkbox input {
@@ -122,59 +175,124 @@ select {
 
 button {
   background: var(--accent);
-  color: white;
+  color: var(--accent-ink);
   border: none;
-  border-radius: 3px;
-  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  font-family: inherit;
+  font-weight: 600;
   font-size: 0.9rem;
   cursor: pointer;
-  margin-top: 0.5rem;
+  margin-top: 0.6rem;
+  transition: filter 0.15s ease, transform 0.05s ease;
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 button:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
 }
 
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* Destrutivo: variante "fantasma" da mesma cor de acento, em vez de
+   uma segunda cor — mantém a paleta de 4 cores consistente. */
+button.danger {
+  background: transparent;
+  color: var(--accent);
+  border: 1.5px solid var(--accent);
+}
+
+button.danger:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+/* ------------------------------------------------------------
+   Lista de sistemas — cada item é uma "entrada do compêndio":
+   aba colorida à esquerda (como uma aba de índice), imagem,
+   título + versão, descrição.
+   ------------------------------------------------------------ */
 .system-list {
   list-style: none;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .system-list li {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: white;
+  align-items: stretch;
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
-  cursor: pointer;
-}
-
-.system-list li.selected {
-  border-color: var(--accent);
-  background: var(--parchment-dark);
+  border-radius: 10px;
+  overflow: hidden;
 }
 
 .system-list-link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
   color: inherit;
   text-decoration: none;
-  flex: 1;
+  padding: 0.9rem 1rem;
+  border-left: 6px solid var(--accent);
 }
 
-.system-list-link:hover strong {
-  text-decoration: underline;
+.system-entry-cover {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--border);
 }
 
-button.danger {
-  background: var(--danger);
+.system-entry-cover-placeholder {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.4rem;
+  color: var(--accent);
+}
+
+.system-entry-text {
+  min-width: 0;
+}
+
+.system-entry-text h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin: 0 0 0.15rem;
+}
+
+.system-entry-text p {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.system-list .danger {
+  margin: auto 1rem;
+  flex-shrink: 0;
 }
 
 table {
@@ -187,6 +305,92 @@ table {
 th,
 td {
   text-align: left;
-  padding: 0.4rem 0.5rem;
+  padding: 0.5rem 0.6rem;
   border-bottom: 1px solid var(--border);
+}
+
+th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: none;
+}
+
+/* Tooltip informativo (balão nativo do navegador via title) */
+.info-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--border);
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-style: normal;
+  cursor: help;
+  line-height: 1;
+}
+
+/* Grupos de atributos — mesma linguagem de "entrada catalogada":
+   uma aba colorida acompanha o título do grupo. */
+.attribute-group {
+  margin-bottom: 1.5rem;
+  border-left: 4px solid var(--accent);
+  padding-left: 0.85rem;
+}
+
+.attribute-group h4 {
+  font-family: var(--font-display);
+  margin: 0 0 0.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.attribute-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.attribute-actions button {
+  margin-top: 0;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.65rem;
+}
+
+.image-field {
+  margin-bottom: 0.85rem;
+}
+
+.file-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.file-field input[type='file'] {
+  padding: 0.3rem 0;
+  border: none;
+  background: none;
+}
+
+.system-cover-preview {
+  display: block;
+  max-width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  margin-bottom: 1rem;
 }

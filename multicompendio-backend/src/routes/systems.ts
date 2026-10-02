@@ -10,5 +10,6 @@ router.patch('/:id', controller.update);
 router.delete('/:id', controller.remove);
 router.post('/:id/attributes', controller.addAttribute);
 router.patch('/:id/attributes/:attributeId', controller.updateAttribute);
+router.delete('/:id/attributes/:attributeId', controller.removeAttribute);
 
 export default router;

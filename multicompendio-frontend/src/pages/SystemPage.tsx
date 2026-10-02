@@ -85,6 +85,13 @@ export function SystemPage() {
                     : prev,
                 )
               }
+              onDeleted={(attributeId) =>
+                setData((prev) =>
+                  prev
+                    ? { ...prev, attributes: prev.attributes.filter((a) => a.id !== attributeId) }
+                    : prev,
+                )
+              }
             />
             <h3>Adicionar atributo</h3>
             <AddAttributeForm systemId={id} onAdded={reload} />

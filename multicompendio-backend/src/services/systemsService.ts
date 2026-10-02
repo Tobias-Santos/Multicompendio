@@ -1,5 +1,6 @@
 import * as systemsRepo from '../repositories/systemsRepository';
 import * as attributesRepo from '../repositories/attributesRepository';
+import { uniqueSlug } from '../utils/slugify';
 import {
   CreateSystemInput,
   UpdateSystemInput,
@@ -13,15 +14,16 @@ export class NotFoundError extends Error {}
 export class ConflictError extends Error {}
 
 function validateAttributeShape(attr: AttributeInput | Partial<AttributeInput>): void {
+  const name = attr.name ?? 'atributo';
   if (attr.data_type === 'select' && (!attr.options || attr.options.length === 0)) {
-    throw new ValidationError(`Atributo "${attr.key}" é do tipo select mas não tem opções.`);
+    throw new ValidationError(`O atributo "${name}" é do tipo "Lista de opções" mas não tem opções definidas.`);
   }
   if (
     attr.min_value !== undefined &&
     attr.max_value !== undefined &&
     attr.min_value > attr.max_value
   ) {
-    throw new ValidationError(`Atributo "${attr.key}": min_value maior que max_value.`);
+    throw new ValidationError(`O atributo "${name}" tem o valor mínimo maior que o valor máximo.`);
   }
 }
 
@@ -38,7 +40,7 @@ export async function registerSystem(input: CreateSystemInput): Promise<RpgSyste
     throw new ConflictError(`Já existe um sistema chamado "${input.name}".`);
   }
 
-  return systemsRepo.insertSystem(input.name, input.description);
+  return systemsRepo.insertSystem(input);
 }
 
 export async function getSystem(id: string): Promise<{ system: RpgSystem; attributes: SystemAttribute[] }> {
@@ -72,6 +74,9 @@ export async function removeSystem(id: string): Promise<void> {
 
 // RF02 + RF03 — adiciona um atributo a um sistema já existente,
 // validando a consistência mínima daquele atributo antes de gravar.
+//
+// A `key` (identificador técnico interno) é gerada aqui automaticamente
+// a partir do nome — o usuário só informa o nome, nunca a key.
 export async function addAttribute(
   systemId: string,
   attr: AttributeInput,
@@ -79,17 +84,27 @@ export async function addAttribute(
   const system = await systemsRepo.findSystemById(systemId);
   if (!system) throw new NotFoundError('Sistema não encontrado.');
 
-  if (!attr.key || !attr.label) {
-    throw new ValidationError('Todo atributo precisa de key e label.');
+  if (!attr.name || !attr.name.trim()) {
+    throw new ValidationError('Todo atributo precisa de um nome.');
   }
   validateAttributeShape(attr);
 
   const existingAttrs = await attributesRepo.listAttributesBySystem(systemId);
-  if (existingAttrs.some((a) => a.key === attr.key)) {
-    throw new ValidationError(`Já existe um atributo com a key "${attr.key}" neste sistema.`);
+  const normalizedName = attr.name.trim().toLowerCase();
+  if (existingAttrs.some((a) => a.name.trim().toLowerCase() === normalizedName)) {
+    throw new ValidationError(`Já existe um atributo chamado "${attr.name}" neste sistema.`);
   }
 
-  return attributesRepo.insertAttribute(systemId, attr);
+  const key = uniqueSlug(attr.name, existingAttrs.map((a) => a.key));
+
+  return attributesRepo.insertAttribute(systemId, key, attr);
+}
+
+// Exclusão de um atributo específico do sistema
+export async function removeAttribute(systemId: string, attributeId: string): Promise<void> {
+  const current = await attributesRepo.findAttributeById(systemId, attributeId);
+  if (!current) throw new NotFoundError('Atributo não encontrado neste sistema.');
+  await attributesRepo.deleteAttributeById(attributeId);
 }
 
 // RF05 — edição de um atributo específico do sistema
@@ -102,8 +117,7 @@ export async function editAttribute(
   if (!current) throw new NotFoundError('Atributo não encontrado neste sistema.');
 
   const merged: AttributeInput = {
-    key: current.key,
-    label: changes.label ?? current.label,
+    name: changes.name ?? current.name,
     data_type: changes.data_type ?? current.data_type,
     default_value: changes.default_value ?? current.default_value ?? undefined,
     min_value: changes.min_value ?? current.min_value ?? undefined,

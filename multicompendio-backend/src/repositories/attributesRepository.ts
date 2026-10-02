@@ -4,19 +4,23 @@ import { AttributeInput, SystemAttribute } from '../types/system';
 // Atributos agora são adicionados um de cada vez (na página de edição do
 // sistema), então uma inserção simples via pool basta — não precisa mais
 // de transação/PoolClient como quando tudo era criado junto no cadastro.
+//
+// `key` é gerado pela camada de serviço (slugify do nome) e passado aqui
+// já pronto — o usuário nunca fornece isso.
 export async function insertAttribute(
   systemId: string,
+  key: string,
   attr: AttributeInput,
 ): Promise<SystemAttribute> {
   const result = await pool.query<SystemAttribute>(
     `INSERT INTO system_attributes
-       (system_id, key, label, data_type, default_value, min_value, max_value, options, is_required, display_order)
+       (system_id, key, name, data_type, default_value, min_value, max_value, options, is_required, display_order)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING *`,
     [
       systemId,
-      attr.key,
-      attr.label,
+      key,
+      attr.name,
       attr.data_type,
       attr.default_value ?? null,
       attr.min_value ?? null,
@@ -55,7 +59,7 @@ export async function updateAttribute(
 ): Promise<SystemAttribute | null> {
   const result = await pool.query<SystemAttribute>(
     `UPDATE system_attributes SET
-       label         = COALESCE($2, label),
+       name          = COALESCE($2, name),
        data_type     = COALESCE($3, data_type),
        default_value = COALESCE($4, default_value),
        min_value     = COALESCE($5, min_value),
@@ -67,7 +71,7 @@ export async function updateAttribute(
      RETURNING *`,
     [
       attributeId,
-      attr.label,
+      attr.name,
       attr.data_type,
       attr.default_value,
       attr.min_value,
@@ -78,4 +82,10 @@ export async function updateAttribute(
     ],
   );
   return result.rows[0] ?? null;
+}
+
+// Exclusão de um atributo específico do sistema
+export async function deleteAttributeById(id: string): Promise<boolean> {
+  const result = await pool.query(`DELETE FROM system_attributes WHERE id = $1`, [id]);
+  return (result.rowCount ?? 0) > 0;
 }

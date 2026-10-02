@@ -72,6 +72,16 @@ export async function remove(req: Request, res: Response): Promise<void> {
   }
 }
 
+// DELETE /systems/:id/attributes/:attributeId
+export async function removeAttribute(req: Request, res: Response): Promise<void> {
+  try {
+    await systemsService.removeAttribute(req.params.id, req.params.attributeId);
+    res.status(204).send();
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
 // PATCH /systems/:id/attributes/:attributeId — RF05
 export async function updateAttribute(req: Request, res: Response): Promise<void> {
   try {

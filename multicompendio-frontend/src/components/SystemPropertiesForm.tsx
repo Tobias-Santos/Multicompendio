@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { RpgSystem } from '../types/system';
 import { updateSystem } from '../api/systemsApi';
+import { InfoLabel } from './InfoLabel';
+import { ImageField } from './ImageField';
 
 interface Props {
   system: RpgSystem;
@@ -10,7 +12,10 @@ interface Props {
 export function SystemPropertiesForm({ system, onUpdated }: Props) {
   const [description, setDescription] = useState(system.description ?? '');
   const [version, setVersion] = useState(system.version ?? '');
-  const [ownerUserId, setOwnerUserId] = useState(system.owner_user_id ?? '');
+  const [language, setLanguage] = useState(system.language ?? '');
+  const [genre, setGenre] = useState(system.genre ?? '');
+  const [setting, setSetting] = useState(system.setting ?? '');
+  const [imageUrl, setImageUrl] = useState(system.image_url ?? '');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -24,7 +29,10 @@ export function SystemPropertiesForm({ system, onUpdated }: Props) {
       const updated = await updateSystem(system.id, {
         description: description || undefined,
         version: version || undefined,
-        owner_user_id: ownerUserId || undefined,
+        language: language || undefined,
+        genre: genre || undefined,
+        setting: setting || undefined,
+        image_url: imageUrl || undefined,
       });
       onUpdated(updated);
       setSaved(true);
@@ -40,33 +48,34 @@ export function SystemPropertiesForm({ system, onUpdated }: Props) {
       <h2>Propriedades do sistema</h2>
 
       <label>
-        Descrição
+        <InfoLabel text="Descrição" info="Breve descrição do sistema: proposta, estilo de jogo, tom." />
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
       </label>
 
       <label>
-        Versão
-        <input
-          placeholder="ex: 5e, 1.0, Revisado 2024"
-          value={version}
-          onChange={(e) => setVersion(e.target.value)}
-        />
+        <InfoLabel text="Idioma" info="Idioma principal do sistema, ex: Português, Inglês." />
+        <input value={language} onChange={(e) => setLanguage(e.target.value)} />
       </label>
 
       <label>
-        Usuário proprietário (ID)
-        <input
-          placeholder="opcional — sem autenticação ainda"
-          value={ownerUserId}
-          onChange={(e) => setOwnerUserId(e.target.value)}
-        />
+        <InfoLabel text="Gênero" info="Gênero narrativo do sistema, ex: Fantasia, Terror, Ficção científica." />
+        <input value={genre} onChange={(e) => setGenre(e.target.value)} />
       </label>
 
-      <p className="muted">
-        Pré-configurado: {system.is_preconfigured ? 'sim' : 'não'}
-        <br />
-        <small>Esse campo só é definido por sistemas que já vêm com a instalação (RF04) — não é editável aqui.</small>
-      </p>
+      <label>
+        <InfoLabel text="Ambientação" info="Cenário ou universo em que as histórias deste sistema se passam." />
+        <textarea value={setting} onChange={(e) => setSetting(e.target.value)} />
+      </label>
+
+      <ImageField value={imageUrl} onChange={setImageUrl} />
+
+      <label>
+        <InfoLabel text="Versão" info="Versão ou edição deste sistema, ex: 5e, 1.0, Revisado 2024." />
+        <input value={version} onChange={(e) => setVersion(e.target.value)} />
+      </label>
+
+      {/* Proprietário fica oculto por enquanto — volta a aparecer quando
+          o cadastro/login de usuários existir de fato. */}
 
       {error && <p className="error">{error}</p>}
       {saved && !error && <p className="muted">Salvo.</p>}

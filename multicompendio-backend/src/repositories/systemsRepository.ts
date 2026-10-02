@@ -1,16 +1,21 @@
 import { pool } from '../db/pool';
-import { RpgSystem, UpdateSystemInput } from '../types/system';
+import { CreateSystemInput, RpgSystem, UpdateSystemInput } from '../types/system';
 
-// RF01 — cadastro simplificado (só nome + descrição)
-export async function insertSystem(
-  name: string,
-  description: string | undefined,
-): Promise<RpgSystem> {
+// RF01 — cadastro: nome, descrição e metadados narrativos
+// (idioma, gênero, ambientação, imagem)
+export async function insertSystem(input: CreateSystemInput): Promise<RpgSystem> {
   const result = await pool.query<RpgSystem>(
-    `INSERT INTO rpg_systems (name, description)
-     VALUES ($1, $2)
+    `INSERT INTO rpg_systems (name, description, language, genre, setting, image_url)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
-    [name, description ?? null],
+    [
+      input.name,
+      input.description ?? null,
+      input.language ?? null,
+      input.genre ?? null,
+      input.setting ?? null,
+      input.image_url ?? null,
+    ],
   );
   return result.rows[0];
 }
@@ -39,10 +44,15 @@ export async function listSystems(): Promise<RpgSystem[]> {
 }
 
 // Edição das demais propriedades do sistema, feita na página de edição
-// (versão, proprietário, descrição). `is_preconfigured` NÃO entra aqui de
-// propósito: é um flag de proveniência (sistema que já veio instalado com
-// a aplicação, via seed) e não algo que o usuário deveria poder marcar em
-// um sistema criado por ele mesmo.
+// (versão, descrição, idioma, gênero, ambientação, imagem).
+//
+// Dois campos ficam de fora de propósito, porque não são escolhas do
+// usuário sobre o próprio sistema — são atribuídos pelo backend:
+//   - is_preconfigured: só é definido pelo seed de instalação (RF04).
+//   - owner_user_id: quando a autenticação existir, deve ser atribuído
+//     automaticamente a partir do usuário autenticado no momento da
+//     criação (req.user.id), nunca digitado manualmente. Por enquanto
+//     fica null em todo sistema, já que ainda não há login.
 export async function updateSystemById(
   id: string,
   changes: UpdateSystemInput,
@@ -50,11 +60,22 @@ export async function updateSystemById(
   const result = await pool.query<RpgSystem>(
     `UPDATE rpg_systems SET
        description       = COALESCE($2, description),
-       owner_user_id     = COALESCE($3, owner_user_id),
-       version           = COALESCE($4, version)
+       version           = COALESCE($3, version),
+       language          = COALESCE($4, language),
+       genre             = COALESCE($5, genre),
+       setting           = COALESCE($6, setting),
+       image_url         = COALESCE($7, image_url)
      WHERE id = $1
      RETURNING *`,
-    [id, changes.description, changes.owner_user_id, changes.version],
+    [
+      id,
+      changes.description,
+      changes.version,
+      changes.language,
+      changes.genre,
+      changes.setting,
+      changes.image_url,
+    ],
   );
   return result.rows[0] ?? null;
 }

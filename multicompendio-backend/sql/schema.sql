@@ -30,6 +30,10 @@ CREATE TABLE rpg_systems (
     description     TEXT,
     owner_user_id   UUID REFERENCES users(id) ON DELETE SET NULL, -- nullable até RF37 existir
     version         VARCHAR(50),                                  -- ex: "5e", "1.0", "Revisado 2024"
+    language        VARCHAR(60),                                  -- ex: "Português", "Inglês"
+    genre           VARCHAR(60),                                  -- ex: "Fantasia", "Terror", "Ficção científica"
+    setting         TEXT,                                         -- ambientação/cenário do sistema
+    image_url       TEXT,                                         -- URL de uma imagem de capa
     is_preconfigured BOOLEAN NOT NULL DEFAULT FALSE, -- suporte futuro ao RF04
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -47,8 +51,8 @@ CREATE TABLE system_attributes (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     system_id       UUID NOT NULL REFERENCES rpg_systems(id) ON DELETE CASCADE,
 
-    key             VARCHAR(60) NOT NULL,   -- identificador técnico, ex: "forca"
-    label           VARCHAR(120) NOT NULL,  -- nome exibido, ex: "Força"
+    key             VARCHAR(60) NOT NULL,   -- identificador técnico interno, gerado pela aplicação a partir do nome
+    name            VARCHAR(120) NOT NULL,  -- nome exibido ao usuário, ex: "Força"
     data_type       attribute_data_type NOT NULL,
 
     default_value   TEXT,                   -- guardado como texto, convertido pela app conforme data_type

@@ -76,3 +76,7 @@ export function updateAttribute(
     body: JSON.stringify(changes),
   });
 }
+
+export function deleteAttribute(systemId: string, attributeId: string): Promise<void> {
+  return request(`/systems/${systemId}/attributes/${attributeId}`, { method: 'DELETE' });
+}
