@@ -8,17 +8,20 @@
 CREATE TYPE attribute_data_type AS ENUM ('number', 'text', 'boolean', 'select');
 
 -- ------------------------------------------------------------
--- Tabela mínima de usuários — placeholder até o módulo de
--- autenticação (RF37) existir de fato. Serve só para dar suporte
--- à FK de "usuário proprietário" em rpg_systems.
+-- RF37 — Usuários (cadastro e entrada na aplicação)
+-- `name` é o nome de exibição (pode repetir entre pessoas);
+-- o e-mail é o identificador de acesso e é único.
+-- A senha nunca é guardada em texto: só o hash (scrypt).
 -- ------------------------------------------------------------
 CREATE TABLE users (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username    VARCHAR(60) NOT NULL,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-    CONSTRAINT users_username_unique UNIQUE (username)
+    id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name           VARCHAR(60) NOT NULL,
+    email          VARCHAR(255) NOT NULL,
+    password_hash  TEXT NOT NULL,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE UNIQUE INDEX users_email_unique ON users (lower(email));
 
 -- ------------------------------------------------------------
 -- RF01 — Cadastro de um sistema de RPG
@@ -28,7 +31,7 @@ CREATE TABLE rpg_systems (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name            VARCHAR(120) NOT NULL,
     description     TEXT,
-    owner_user_id   UUID REFERENCES users(id) ON DELETE SET NULL, -- nullable até RF37 existir
+    owner_user_id   UUID REFERENCES users(id) ON DELETE SET NULL, -- null nos sistemas pré-configurados (RF04)
     version         VARCHAR(50),                                  -- ex: "5e", "1.0", "Revisado 2024"
     language        VARCHAR(60),                                  -- ex: "Português", "Inglês"
     genre           VARCHAR(60),                                  -- ex: "Fantasia", "Terror", "Ficção científica"
@@ -36,10 +39,12 @@ CREATE TABLE rpg_systems (
     image_url       TEXT,                                         -- URL de uma imagem de capa
     is_preconfigured BOOLEAN NOT NULL DEFAULT FALSE, -- suporte futuro ao RF04
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-    CONSTRAINT rpg_systems_name_unique UNIQUE (name)
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- O nome do sistema é único por proprietário (duas pessoas podem ter
+-- um sistema com o mesmo nome).
+CREATE UNIQUE INDEX rpg_systems_owner_name_unique ON rpg_systems (owner_user_id, lower(name));
 
 CREATE INDEX idx_rpg_systems_owner_user_id ON rpg_systems(owner_user_id);
 

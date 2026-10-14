@@ -1,44 +1,61 @@
 import { pool } from '../db/pool';
 import { CreateSystemInput, RpgSystem, UpdateSystemInput } from '../types/system';
 
+// Todo sistema volta com o nome do proprietário (join com users).
+const SELECT_SYSTEM = `
+  SELECT s.*, u.name AS owner_name
+    FROM rpg_systems s
+    LEFT JOIN users u ON u.id = s.owner_user_id`;
+
 // RF01 — cadastro: nome, descrição e metadados narrativos
-// (idioma, gênero, ambientação, imagem)
-export async function insertSystem(input: CreateSystemInput): Promise<RpgSystem> {
-  const result = await pool.query<RpgSystem>(
-    `INSERT INTO rpg_systems (name, description, language, genre, setting, image_url)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING *`,
+// (idioma, gênero, ambientação, imagem). O proprietário é o usuário
+// autenticado — vem da sessão, nunca de um campo digitado.
+export async function insertSystem(
+  input: CreateSystemInput,
+  ownerUserId: string,
+): Promise<RpgSystem> {
+  const inserted = await pool.query<{ id: string }>(
+    `INSERT INTO rpg_systems (name, description, language, genre, setting, image_url, owner_user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     RETURNING id`,
     [
-      input.name,
+      input.name.trim(),
       input.description ?? null,
       input.language ?? null,
       input.genre ?? null,
       input.setting ?? null,
       input.image_url ?? null,
+      ownerUserId,
     ],
   );
-  return result.rows[0];
+  return (await findSystemById(inserted.rows[0].id)) as RpgSystem;
 }
 
-export async function findSystemByName(name: string): Promise<RpgSystem | null> {
+// Sistemas que o usuário enxerga: os pré-configurados e os que ele criou.
+export async function findVisibleSystemByName(
+  name: string,
+  userId: string,
+): Promise<RpgSystem | null> {
   const result = await pool.query<RpgSystem>(
-    `SELECT * FROM rpg_systems WHERE name = $1`,
-    [name],
+    `${SELECT_SYSTEM}
+      WHERE lower(s.name) = lower($1)
+        AND (s.is_preconfigured OR s.owner_user_id = $2)`,
+    [name.trim(), userId],
   );
   return result.rows[0] ?? null;
 }
 
 export async function findSystemById(id: string): Promise<RpgSystem | null> {
-  const result = await pool.query<RpgSystem>(
-    `SELECT * FROM rpg_systems WHERE id = $1`,
-    [id],
-  );
+  const result = await pool.query<RpgSystem>(`${SELECT_SYSTEM} WHERE s.id = $1`, [id]);
   return result.rows[0] ?? null;
 }
 
-export async function listSystems(): Promise<RpgSystem[]> {
+export async function listVisibleSystems(userId: string): Promise<RpgSystem[]> {
   const result = await pool.query<RpgSystem>(
-    `SELECT * FROM rpg_systems ORDER BY name`,
+    `${SELECT_SYSTEM}
+      WHERE s.is_preconfigured OR s.owner_user_id = $1
+      ORDER BY lower(s.name)`,
+    [userId],
   );
   return result.rows;
 }
@@ -49,15 +66,12 @@ export async function listSystems(): Promise<RpgSystem[]> {
 // Dois campos ficam de fora de propósito, porque não são escolhas do
 // usuário sobre o próprio sistema — são atribuídos pelo backend:
 //   - is_preconfigured: só é definido pelo seed de instalação (RF04).
-//   - owner_user_id: quando a autenticação existir, deve ser atribuído
-//     automaticamente a partir do usuário autenticado no momento da
-//     criação (req.user.id), nunca digitado manualmente. Por enquanto
-//     fica null em todo sistema, já que ainda não há login.
+//   - owner_user_id: atribuído na criação, a partir do usuário autenticado.
 export async function updateSystemById(
   id: string,
   changes: UpdateSystemInput,
 ): Promise<RpgSystem | null> {
-  const result = await pool.query<RpgSystem>(
+  await pool.query(
     `UPDATE rpg_systems SET
        description       = COALESCE($2, description),
        version           = COALESCE($3, version),
@@ -65,8 +79,7 @@ export async function updateSystemById(
        genre             = COALESCE($5, genre),
        setting           = COALESCE($6, setting),
        image_url         = COALESCE($7, image_url)
-     WHERE id = $1
-     RETURNING *`,
+     WHERE id = $1`,
     [
       id,
       changes.description,
@@ -77,7 +90,7 @@ export async function updateSystemById(
       changes.image_url,
     ],
   );
-  return result.rows[0] ?? null;
+  return findSystemById(id);
 }
 
 // RF06 — exclusão de um sistema de RPG

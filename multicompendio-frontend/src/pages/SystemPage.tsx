@@ -5,6 +5,7 @@ import { getSystem, deleteSystem } from '../api/systemsApi';
 import { SystemPropertiesForm } from '../components/SystemPropertiesForm';
 import { AttributesTable } from '../components/AttributesTable';
 import { AddAttributeForm } from '../components/AddAttributeForm';
+import { SystemSummary } from '../components/SystemSummary';
 
 export function SystemPage() {
   const { id } = useParams<{ id: string }>();
@@ -48,6 +49,8 @@ export function SystemPage() {
     );
   }
 
+  const canEdit = data.system.can_edit;
+
   return (
     <div className="layout">
       <header>
@@ -59,14 +62,20 @@ export function SystemPage() {
 
       <div className="columns-2">
         <div className="column">
-          <SystemPropertiesForm
-            system={data.system}
-            onUpdated={(system) => setData((prev) => (prev ? { ...prev, system } : prev))}
-          />
+          {canEdit ? (
+            <>
+              <SystemPropertiesForm
+                system={data.system}
+                onUpdated={(system) => setData((prev) => (prev ? { ...prev, system } : prev))}
+              />
 
-          <button type="button" onClick={handleDeleteSystem} className="danger">
-            Excluir sistema
-          </button>
+              <button type="button" onClick={handleDeleteSystem} className="danger">
+                Excluir sistema
+              </button>
+            </>
+          ) : (
+            <SystemSummary system={data.system} />
+          )}
         </div>
 
         <div className="column">
@@ -75,6 +84,7 @@ export function SystemPage() {
             <AttributesTable
               systemId={id}
               attributes={data.attributes}
+              readOnly={!canEdit}
               onChanged={(updated) =>
                 setData((prev) =>
                   prev
@@ -93,8 +103,12 @@ export function SystemPage() {
                 )
               }
             />
-            <h3>Adicionar atributo</h3>
-            <AddAttributeForm systemId={id} onAdded={reload} />
+            {canEdit && (
+              <>
+                <h3>Adicionar atributo</h3>
+                <AddAttributeForm systemId={id} onAdded={reload} />
+              </>
+            )}
           </div>
         </div>
       </div>

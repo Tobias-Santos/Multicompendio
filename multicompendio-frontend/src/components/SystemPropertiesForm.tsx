@@ -3,6 +3,7 @@ import { RpgSystem } from '../types/system';
 import { updateSystem } from '../api/systemsApi';
 import { InfoLabel } from './InfoLabel';
 import { ImageField } from './ImageField';
+import { ownerLabel } from '../utils/owner';
 
 interface Props {
   system: RpgSystem;
@@ -74,8 +75,7 @@ export function SystemPropertiesForm({ system, onUpdated }: Props) {
         <input value={version} onChange={(e) => setVersion(e.target.value)} />
       </label>
 
-      {/* Proprietário fica oculto por enquanto — volta a aparecer quando
-          o cadastro/login de usuários existir de fato. */}
+      <p className="muted">Proprietário: {ownerLabel(system)}</p>
 
       {error && <p className="error">{error}</p>}
       {saved && !error && <p className="muted">Salvo.</p>}

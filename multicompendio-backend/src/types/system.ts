@@ -11,8 +11,14 @@ export interface RpgSystem {
   setting: string | null;
   image_url: string | null;
   is_preconfigured: boolean;
+  owner_name: string | null; // nome do proprietário (vem do cadastro de usuários)
   created_at: string;
   updated_at: string;
+}
+
+// O que a API devolve ao front: o sistema + se quem está pedindo pode alterá-lo.
+export interface SystemView extends RpgSystem {
+  can_edit: boolean;
 }
 
 export interface SystemAttribute {

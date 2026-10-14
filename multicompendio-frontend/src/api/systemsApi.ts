@@ -6,29 +6,7 @@ import {
   SystemWithAttributes,
   UpdateSystemInput,
 } from '../types/system';
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000';
-
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-
-  if (!res.ok) {
-    let message = `Erro ${res.status}`;
-    try {
-      const body = await res.json();
-      if (body?.error) message = body.error;
-    } catch {
-      // resposta sem corpo JSON (ex: 204) — mantém a mensagem padrão
-    }
-    throw new Error(message);
-  }
-
-  if (res.status === 204) return undefined as T;
-  return res.json() as Promise<T>;
-}
+import { request } from './http';
 
 export function listSystems(): Promise<RpgSystem[]> {
   return request('/systems');

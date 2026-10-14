@@ -8,9 +8,10 @@ interface Props {
   attributes: SystemAttribute[];
   onChanged: (updated: SystemAttribute) => void;
   onDeleted: (attributeId: string) => void;
+  readOnly?: boolean; // sistemas só para consulta: sem editar nem excluir
 }
 
-export function AttributesTable({ systemId, attributes, onChanged, onDeleted }: Props) {
+export function AttributesTable({ systemId, attributes, onChanged, onDeleted, readOnly = false }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +58,7 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted }: 
                 <th>Mínimo / Máximo</th>
                 <th>Opções</th>
                 <th>Obrigatório</th>
-                <th></th>
+                {!readOnly && <th></th>}
               </tr>
             </thead>
             <tbody>
@@ -79,6 +80,7 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted }: 
                   </td>
                   <td>{attr.options ? attr.options.join(', ') : '—'}</td>
                   <td>{attr.is_required ? 'sim' : 'não'}</td>
+                  {!readOnly && (
                   <td className="attribute-actions">
                     {editingId === attr.id ? (
                       <button type="button" onClick={() => saveName(attr)}>
@@ -99,6 +101,7 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted }: 
                       excluir
                     </button>
                   </td>
+                  )}
                 </tr>
               ))}
             </tbody>

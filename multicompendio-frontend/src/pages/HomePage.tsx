@@ -39,7 +39,7 @@ export function HomePage() {
 
       <div className="columns-2">
         <div className="column">
-          <SystemForm onCreated={(system) => navigate(`/systems/${system.id}`)} />
+          <SystemForm onCreated={(system) => navigate(`/sistemas/${system.id}`)} />
         </div>
 
         <div className="column">

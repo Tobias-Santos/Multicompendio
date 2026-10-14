@@ -15,7 +15,7 @@ export function SystemList({ systems, onDelete }: Props) {
     <ul className="system-list">
       {systems.map((system) => (
         <li key={system.id}>
-          <Link to={`/systems/${system.id}`} className="system-list-link">
+          <Link to={`/sistemas/${system.id}`} className="system-list-link">
             {system.image_url ? (
               <img src={system.image_url} alt="" className="system-entry-cover" />
             ) : (
@@ -31,16 +31,18 @@ export function SystemList({ systems, onDelete }: Props) {
               {system.description && <p className="muted">{system.description}</p>}
             </div>
           </Link>
-          <button
-            type="button"
-            className="danger"
-            onClick={(e) => {
-              e.preventDefault();
-              onDelete(system.id);
-            }}
-          >
-            excluir
-          </button>
+          {system.can_edit && (
+            <button
+              type="button"
+              className="danger"
+              onClick={(e) => {
+                e.preventDefault();
+                onDelete(system.id);
+              }}
+            >
+              excluir
+            </button>
+          )}
         </li>
       ))}
     </ul>

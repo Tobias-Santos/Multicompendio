@@ -11,6 +11,8 @@ export interface RpgSystem {
   setting: string | null;
   image_url: string | null;
   is_preconfigured: boolean;
+  owner_name: string | null; // nome de quem criou; vazio nos sistemas que já vêm com o app
+  can_edit: boolean;         // se quem está logado pode alterar este sistema
   created_at: string;
   updated_at: string;
 }
