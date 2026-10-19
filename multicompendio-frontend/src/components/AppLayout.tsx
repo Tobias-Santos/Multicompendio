@@ -1,6 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { UserBar } from './UserBar';
+import { AppBar } from './AppBar';
 
 // Envolve as páginas que exigem conta: sem sessão, manda para a tela de entrada
 // (guardando para onde a pessoa queria ir).
@@ -22,7 +22,7 @@ export function AppLayout() {
 
   return (
     <>
-      <UserBar />
+      <AppBar />
       <Outlet />
     </>
   );

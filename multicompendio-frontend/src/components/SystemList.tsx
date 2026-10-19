@@ -15,7 +15,11 @@ export function SystemList({ systems, onDelete }: Props) {
     <ul className="system-list">
       {systems.map((system) => (
         <li key={system.id}>
-          <Link to={`/sistemas/${system.id}`} className="system-list-link">
+          <Link
+            to={`/sistemas/${system.id}`}
+            className="system-list-link"
+            title={system.description ? `${system.name} — ${system.description}` : system.name}
+          >
             {system.image_url ? (
               <img src={system.image_url} alt="" className="system-entry-cover" />
             ) : (

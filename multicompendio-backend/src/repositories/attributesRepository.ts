@@ -14,13 +14,14 @@ export async function insertAttribute(
 ): Promise<SystemAttribute> {
   const result = await pool.query<SystemAttribute>(
     `INSERT INTO system_attributes
-       (system_id, key, name, data_type, default_value, min_value, max_value, options, is_required, display_order)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       (system_id, key, name, group_name, data_type, default_value, min_value, max_value, options, is_required, display_order)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      RETURNING *`,
     [
       systemId,
       key,
       attr.name,
+      attr.group_name || null,
       attr.data_type,
       attr.default_value ?? null,
       attr.min_value ?? null,
@@ -35,7 +36,7 @@ export async function insertAttribute(
 
 export async function listAttributesBySystem(systemId: string): Promise<SystemAttribute[]> {
   const result = await pool.query<SystemAttribute>(
-    `SELECT * FROM system_attributes WHERE system_id = $1 ORDER BY display_order`,
+    `SELECT * FROM system_attributes WHERE system_id = $1 ORDER BY display_order, created_at, id`,
     [systemId],
   );
   return result.rows;
@@ -66,7 +67,9 @@ export async function updateAttribute(
        max_value     = COALESCE($6, max_value),
        options       = COALESCE($7, options),
        is_required   = COALESCE($8, is_required),
-       display_order = COALESCE($9, display_order)
+       display_order = COALESCE($9, display_order),
+       -- undefined mantém a seção atual; texto vazio tira o atributo da seção
+       group_name    = CASE WHEN $10::text IS NULL THEN group_name WHEN $10::text = '' THEN NULL ELSE $10::text END
      WHERE id = $1
      RETURNING *`,
     [
@@ -79,6 +82,7 @@ export async function updateAttribute(
       attr.options ? JSON.stringify(attr.options) : null,
       attr.is_required,
       attr.display_order,
+      attr.group_name,
     ],
   );
   return result.rows[0] ?? null;

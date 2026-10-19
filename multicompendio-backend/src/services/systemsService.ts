@@ -1,5 +1,6 @@
 import * as systemsRepo from '../repositories/systemsRepository';
 import * as attributesRepo from '../repositories/attributesRepository';
+import * as charactersRepo from '../repositories/charactersRepository';
 import { uniqueSlug } from '../utils/slugify';
 import {
   CreateSystemInput,
@@ -25,7 +26,7 @@ function toView(system: RpgSystem, userId: string): SystemView {
   return { ...system, can_edit: !system.is_preconfigured && system.owner_user_id === userId };
 }
 
-async function loadVisibleSystem(id: string, userId: string): Promise<RpgSystem> {
+export async function loadVisibleSystem(id: string, userId: string): Promise<RpgSystem> {
   const system = await systemsRepo.findSystemById(id);
   // Sistema de outra pessoa é tratado como inexistente: não revela que ele existe.
   if (!system || !isVisible(system, userId)) throw new NotFoundError('Sistema não encontrado.');
@@ -105,10 +106,44 @@ export async function updateSystem(
   return toView(updated, userId);
 }
 
-// RF06
+// "1 personagem" / "3 personagens"
+function countOf(total: number, singular: string, plural: string): string {
+  return `${total} ${total === 1 ? singular : plural}`;
+}
+
+// RF06 + RF38 — só exclui um sistema que não tem personagens
 export async function removeSystem(id: string, userId: string): Promise<void> {
   await loadEditableSystem(id, userId);
-  await systemsRepo.deleteSystemById(id);
+
+  const characters = await charactersRepo.countBySystem(id);
+  if (characters > 0) {
+    throw new ConflictError(
+      `Este sistema não pode ser excluído porque tem ${countOf(characters, 'personagem', 'personagens')}. ` +
+        'Exclua os personagens primeiro.',
+    );
+  }
+
+  try {
+    await systemsRepo.deleteSystemById(id);
+  } catch (err) {
+    // segunda barreira: o banco também recusa se um personagem surgiu entre a checagem e a exclusão
+    if ((err as { code?: string }).code === '23503') {
+      throw new ConflictError('Este sistema não pode ser excluído porque ainda tem personagens.');
+    }
+    throw err;
+  }
+}
+
+const MAX_GROUP_NAME_LENGTH = 80;
+
+// Seção do atributo: aparada, e vazia vira "sem seção".
+function normalizeGroupName(raw: string | undefined): string | undefined {
+  if (raw === undefined || raw === null) return undefined;
+  const group = String(raw).trim();
+  if (group.length > MAX_GROUP_NAME_LENGTH) {
+    throw new ValidationError(`O nome da seção pode ter no máximo ${MAX_GROUP_NAME_LENGTH} caracteres.`);
+  }
+  return group;
 }
 
 // RF02 + RF03 — adiciona um atributo a um sistema já existente,
@@ -136,7 +171,11 @@ export async function addAttribute(
 
   const key = uniqueSlug(attr.name, existingAttrs.map((a) => a.key));
 
-  return attributesRepo.insertAttribute(systemId, key, attr);
+  return attributesRepo.insertAttribute(systemId, key, {
+    ...attr,
+    name: attr.name.trim(),
+    group_name: normalizeGroupName(attr.group_name),
+  });
 }
 
 // Exclusão de um atributo específico do sistema
@@ -148,7 +187,22 @@ export async function removeAttribute(
   await loadEditableSystem(systemId, userId);
   const current = await attributesRepo.findAttributeById(systemId, attributeId);
   if (!current) throw new NotFoundError('Atributo não encontrado neste sistema.');
-  await attributesRepo.deleteAttributeById(attributeId);
+
+  const inUse = await charactersRepo.countValuesByAttribute(attributeId);
+  if (inUse > 0) {
+    throw new ConflictError(
+      `O atributo "${current.name}" não pode ser excluído porque ${countOf(inUse, 'personagem usa', 'personagens usam')} esse atributo.`,
+    );
+  }
+
+  try {
+    await attributesRepo.deleteAttributeById(attributeId);
+  } catch (err) {
+    if ((err as { code?: string }).code === '23503') {
+      throw new ConflictError(`O atributo "${current.name}" não pode ser excluído porque está em uso.`);
+    }
+    throw err;
+  }
 }
 
 // RF05 — edição de um atributo específico do sistema
@@ -161,6 +215,32 @@ export async function editAttribute(
   await loadEditableSystem(systemId, userId);
   const current = await attributesRepo.findAttributeById(systemId, attributeId);
   if (!current) throw new NotFoundError('Atributo não encontrado neste sistema.');
+
+  // Mudar o tipo de um atributo que já tem valores guardados invalidaria esses valores.
+  if (changes.data_type && changes.data_type !== current.data_type) {
+    const inUse = await charactersRepo.countValuesByAttribute(attributeId);
+    if (inUse > 0) {
+      throw new ConflictError(
+        `O tipo do atributo "${current.name}" não pode ser alterado porque ${countOf(inUse, 'personagem usa', 'personagens usam')} esse atributo.`,
+      );
+    }
+  }
+
+  // Renomear não pode gerar dois atributos com o mesmo nome no sistema.
+  if (changes.name !== undefined) {
+    const newName = changes.name.trim();
+    if (!newName) throw new ValidationError('Todo atributo precisa de um nome.');
+    const siblings = await attributesRepo.listAttributesBySystem(systemId);
+    if (siblings.some((a) => a.id !== attributeId && a.name.trim().toLowerCase() === newName.toLowerCase())) {
+      throw new ValidationError(`Já existe um atributo chamado "${newName}" neste sistema.`);
+    }
+    changes = { ...changes, name: newName };
+  }
+
+  // Seção: texto vazio tira o atributo da seção (o repositório trata '' como remover).
+  if (changes.group_name !== undefined) {
+    changes = { ...changes, group_name: normalizeGroupName(changes.group_name) };
+  }
 
   const merged: AttributeInput = {
     name: changes.name ?? current.name,

@@ -31,13 +31,13 @@ export function HomePage() {
   return (
     <div className="layout">
       <header>
-        <h1>Multicompêndio — Sistemas de RPG</h1>
+        <h1>Sistemas de RPG</h1>
         <p className="muted">Cadastre um novo sistema e depois abra-o para configurar os detalhes.</p>
       </header>
 
       {error && <p className="error">{error}</p>}
 
-      <div className="columns-2">
+      <div className="home-columns">
         <div className="column">
           <SystemForm onCreated={(system) => navigate(`/sistemas/${system.id}`)} />
         </div>

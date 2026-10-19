@@ -1,17 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SystemWithAttributes } from '../types/system';
+import { CharacterSummary } from '../types/character';
 import { getSystem, deleteSystem } from '../api/systemsApi';
+import { deleteCharacter, listCharacters } from '../api/charactersApi';
 import { SystemPropertiesForm } from '../components/SystemPropertiesForm';
 import { AttributesTable } from '../components/AttributesTable';
 import { AddAttributeForm } from '../components/AddAttributeForm';
 import { SystemSummary } from '../components/SystemSummary';
+import { CharacterList } from '../components/CharacterList';
 
 export function SystemPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState<SystemWithAttributes | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [characters, setCharacters] = useState<CharacterSummary[]>([]);
 
   function reload() {
     if (!id) return;
@@ -22,13 +27,35 @@ export function SystemPage() {
 
   useEffect(reload, [id]);
 
+  function reloadCharacters() {
+    if (!id) return;
+    listCharacters(id)
+      .then(setCharacters)
+      .catch((err) => setActionError(err instanceof Error ? err.message : 'Erro ao carregar os personagens'));
+  }
+
+  useEffect(reloadCharacters, [id]);
+
+  async function handleDeleteCharacter(character: CharacterSummary) {
+    if (!confirm(`Excluir o personagem "${character.name}"?`)) return;
+    setActionError(null);
+    try {
+      await deleteCharacter(character.id);
+      reloadCharacters();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Não foi possível excluir o personagem.');
+    }
+  }
+
   async function handleDeleteSystem() {
     if (!id || !confirm('Excluir este sistema?')) return;
+    setActionError(null);
     try {
       await deleteSystem(id);
       navigate('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao excluir');
+      // erro de ação (ex.: sistema com personagens) não substitui a página inteira
+      setActionError(err instanceof Error ? err.message : 'Não foi possível excluir o sistema.');
     }
   }
 
@@ -59,6 +86,8 @@ export function SystemPage() {
         </Link>
         <h1>{data.system.name}</h1>
       </header>
+
+      {actionError && <p className="error">{actionError}</p>}
 
       <div className="columns-2">
         <div className="column">
@@ -106,12 +135,32 @@ export function SystemPage() {
             {canEdit && (
               <>
                 <h3>Adicionar atributo</h3>
-                <AddAttributeForm systemId={id} onAdded={reload} />
+                <AddAttributeForm
+                  systemId={id}
+                  onAdded={reload}
+                  sections={Array.from(
+                    new Set(data.attributes.map((a) => a.group_name).filter((g): g is string => !!g)),
+                  )}
+                />
               </>
             )}
           </div>
         </div>
       </div>
+
+      <section className="card characters-card">
+        <div className="card-header">
+          <h2>Personagens</h2>
+          <Link
+            to={`/sistemas/${id}/personagens/novo`}
+            className="button-link"
+            title="Cria um personagem usando os atributos deste sistema."
+          >
+            Novo personagem
+          </Link>
+        </div>
+        <CharacterList characters={characters} onDelete={handleDeleteCharacter} />
+      </section>
     </div>
   );
 }

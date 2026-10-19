@@ -8,9 +8,10 @@ const empty: AttributeInput = { name: '', data_type: 'number' };
 interface Props {
   systemId: string;
   onAdded: () => void;
+  sections?: string[]; // seções que o sistema já tem, sugeridas ao digitar
 }
 
-export function AddAttributeForm({ systemId, onAdded }: Props) {
+export function AddAttributeForm({ systemId, onAdded, sections = [] }: Props) {
   const [attr, setAttr] = useState<AttributeInput>({ ...empty });
   const [optionsText, setOptionsText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +33,8 @@ export function AddAttributeForm({ systemId, onAdded }: Props) {
             ? optionsText.split(',').map((s) => s.trim()).filter(Boolean)
             : undefined,
       });
-      setAttr({ ...empty });
+      // mantém a seção: facilita cadastrar vários atributos seguidos no mesmo grupo
+      setAttr({ ...empty, group_name: attr.group_name });
       setOptionsText('');
       onAdded();
     } catch (err) {
@@ -51,6 +53,19 @@ export function AddAttributeForm({ systemId, onAdded }: Props) {
         onChange={(e) => update({ name: e.target.value })}
         required
       />
+      <input
+        list="secoes-do-sistema"
+        placeholder="Seção (ex: Combate)"
+        title="Agrupa atributos parecidos na ficha, como Combate ou Magias. Deixe em branco para não agrupar."
+        maxLength={80}
+        value={attr.group_name ?? ''}
+        onChange={(e) => update({ group_name: e.target.value })}
+      />
+      <datalist id="secoes-do-sistema">
+        {sections.map((section) => (
+          <option key={section} value={section} />
+        ))}
+      </datalist>
       <select
         value={attr.data_type}
         title="Tipo de valor que este atributo vai guardar."

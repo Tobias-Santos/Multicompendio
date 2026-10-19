@@ -6,17 +6,31 @@ import { AttributeDataType } from '../types/system';
 export const ATTRIBUTE_TYPE_LABELS: Record<AttributeDataType, string> = {
   number: 'Número',
   text: 'Texto',
+  longtext: 'Texto longo',
   boolean: 'Verdadeiro ou falso',
   select: 'Lista de opções',
 };
 
-export const ATTRIBUTE_TYPE_ORDER: AttributeDataType[] = ['number', 'text', 'boolean', 'select'];
+export const ATTRIBUTE_TYPE_ORDER: AttributeDataType[] = ['number', 'text', 'longtext', 'boolean', 'select'];
 
 // Exemplo de nome de atributo coerente com cada tipo, usado no
 // placeholder do campo "Nome" ao adicionar um atributo.
 export const ATTRIBUTE_NAME_EXAMPLES: Record<AttributeDataType, string> = {
   number: 'Força',
-  text: 'Biografia',
+  text: 'Apelido',
+  longtext: 'Biografia',
   boolean: 'Possui armadura',
   select: 'Classe',
 };
+
+// Agrupa atributos por seção, na ordem em que cada seção aparece pela primeira vez.
+// Atributos sem seção ficam na chave '' (e só existe grupo se houver algum).
+export function groupBySection<T extends { group_name: string | null }>(items: T[]): Array<{ section: string; items: T[] }> {
+  const map = new Map<string, T[]>();
+  for (const item of items) {
+    const key = item.group_name ?? '';
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(item);
+  }
+  return Array.from(map, ([section, list]) => ({ section, items: list }));
+}

@@ -1,4 +1,5 @@
-export type AttributeDataType = 'number' | 'text' | 'boolean' | 'select';
+// 'longtext' = texto de várias linhas (histórias, anotações, listas de magias)
+export type AttributeDataType = 'number' | 'text' | 'longtext' | 'boolean' | 'select';
 
 export interface RpgSystem {
   id: string;
@@ -26,6 +27,7 @@ export interface SystemAttribute {
   system_id: string;
   key: string; // identificador técnico interno — gerado pela aplicação, nunca pelo usuário
   name: string;
+  group_name: string | null; // seção da ficha em que o atributo aparece (ex.: "Combate")
   data_type: AttributeDataType;
   default_value: string | null;
   min_value: number | null;
@@ -40,6 +42,7 @@ export interface SystemAttribute {
 // partir do nome, o usuário nunca precisa pensar nisso.
 export interface AttributeInput {
   name: string;
+  group_name?: string; // seção (opcional); texto vazio remove o atributo da seção
   data_type: AttributeDataType;
   default_value?: string;
   min_value?: number;

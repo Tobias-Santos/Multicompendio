@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { InfoLabel } from '../components/InfoLabel';
+import { BrandLogo } from '../components/BrandLogo';
 
 export function LoginPage() {
   const { user, loading, login } = useAuth();
@@ -33,7 +34,9 @@ export function LoginPage() {
   return (
     <div className="auth-page">
       <header className="auth-brand">
-        <h1>Multicompêndio</h1>
+        <h1>
+          <BrandLogo className="auth-logo" />
+        </h1>
         <p className="muted">Seus sistemas de RPG, organizados em um só lugar.</p>
       </header>
 

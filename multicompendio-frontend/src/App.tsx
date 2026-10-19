@@ -4,6 +4,8 @@ import { HomePage } from './pages/HomePage';
 import { SystemPage } from './pages/SystemPage';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
+import { CharacterCreatePage } from './pages/CharacterCreatePage';
+import { CharacterPage } from './pages/CharacterPage';
 import { ThemeToggle } from './theme/ThemeToggle';
 import './styles.css';
 
@@ -18,6 +20,8 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/sistemas/:id" element={<SystemPage />} />
+          <Route path="/sistemas/:id/personagens/novo" element={<CharacterCreatePage />} />
+          <Route path="/personagens/:id" element={<CharacterPage />} />
         </Route>
       </Routes>
 

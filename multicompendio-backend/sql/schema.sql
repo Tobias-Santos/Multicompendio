@@ -5,7 +5,7 @@
 
 -- Tipo de dado que um atributo de sistema pode assumir.
 -- 'select' usa a coluna `options` (JSONB) para armazenar as escolhas possíveis.
-CREATE TYPE attribute_data_type AS ENUM ('number', 'text', 'boolean', 'select');
+CREATE TYPE attribute_data_type AS ENUM ('number', 'text', 'longtext', 'boolean', 'select');
 
 -- ------------------------------------------------------------
 -- RF37 — Usuários (cadastro e entrada na aplicação)
@@ -58,6 +58,7 @@ CREATE TABLE system_attributes (
 
     key             VARCHAR(60) NOT NULL,   -- identificador técnico interno, gerado pela aplicação a partir do nome
     name            VARCHAR(120) NOT NULL,  -- nome exibido ao usuário, ex: "Força"
+    group_name      VARCHAR(80),            -- seção da ficha em que aparece, ex: "Combate" (opcional)
     data_type       attribute_data_type NOT NULL,
 
     default_value   TEXT,                   -- guardado como texto, convertido pela app conforme data_type
@@ -134,4 +135,41 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 CREATE TRIGGER trg_system_attributes_updated_at
 BEFORE UPDATE ON system_attributes
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ------------------------------------------------------------
+-- v1.2 — Personagens (RF09 a RF16) e trava de exclusão (RF38)
+-- ------------------------------------------------------------
+-- Um personagem pertence a um sistema e a um usuário.
+-- ON DELETE RESTRICT em system_id: o banco recusa excluir um sistema
+-- que ainda tem personagens (RF38) — a aplicação checa antes e mostra
+-- uma mensagem clara, e esta regra fica como segunda barreira.
+CREATE TABLE characters (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    system_id       UUID NOT NULL REFERENCES rpg_systems(id) ON DELETE RESTRICT,
+    owner_user_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name            VARCHAR(120) NOT NULL,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_characters_owner_system ON characters(owner_user_id, system_id);
+
+-- Valor de cada atributo do sistema para um personagem. Uma linha por
+-- (personagem, atributo), com o valor em JSONB (número, texto ou verdadeiro/falso).
+-- Ter uma linha por atributo (e não um JSON único no personagem) deixa o
+-- banco pronto para atributos calculados no futuro e permite que ele
+-- recuse excluir um atributo que ainda está em uso (ON DELETE RESTRICT).
+CREATE TABLE character_values (
+    character_id    UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    attribute_id    UUID NOT NULL REFERENCES system_attributes(id) ON DELETE RESTRICT,
+    value           JSONB NOT NULL,
+
+    PRIMARY KEY (character_id, attribute_id)
+);
+
+CREATE INDEX idx_character_values_attribute ON character_values(attribute_id);
+
+CREATE TRIGGER trg_characters_updated_at
+BEFORE UPDATE ON characters
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
