@@ -1,6 +1,6 @@
 # Multicompêndio
 
-Plataforma web para gerenciar múltiplos sistemas de RPG (Role Playing Game): cadastro de sistemas, configuração de atributos personalizados e, nas próximas etapas, personagens, itens, histórias de origem e exportação de fichas em PDF.
+Plataforma web para gerenciar múltiplos sistemas de RPG (Role Playing Game): contas de usuário, cadastro de sistemas, configuração de atributos personalizados, personagens e, nas próximas etapas, itens, histórias de origem e exportação de fichas em PDF.
 
 
 ## Tecnologias
@@ -77,12 +77,15 @@ cp .env.example .env
 copy .env.example .env
 ```
 
-Abra o `.env` e ajuste a `DATABASE_URL` com o usuário, a senha e o nome do banco que você usou:
+Abra o `.env` e ajuste a `DATABASE_URL` com o usuário, a senha e o nome do banco que você usou, e defina uma chave para o `JWT_SECRET`:
 
 ```env
 PORT=3000
 DATABASE_URL=postgres://postgres:SUA_SENHA@localhost:5432/multicompendio
+JWT_SECRET=troque-por-uma-chave-longa-e-aleatoria
 ```
+
+O `JWT_SECRET` assina as sessões de login: use uma chave sua, longa e aleatória, e não a envie ao GitHub.
 
 Suba o servidor:
 
@@ -125,7 +128,7 @@ npm run dev
 
 ### 5. Abrir no navegador
 
-Acesse **http://localhost:5173**. Você deve ver a tela inicial com o sistema "Dungeons & Dragons 5e" já cadastrado.
+Acesse **http://localhost:5173**. Na primeira vez, clique em **Criar conta**; depois de entrar, você deve ver a tela inicial com o sistema "Dungeons & Dragons 5e" já cadastrado.
 
 ## Scripts disponíveis
 
@@ -154,9 +157,8 @@ Use o caminho completo do executável ou adicione a pasta `bin` do PostgreSQL ao
 Apague a pasta `node_modules` e o arquivo `package-lock.json` e rode `npm install` novamente. Em último caso, use `npm install --legacy-peer-deps`.
 
 **Acentos corrompidos no sistema pré-configurado**
-Veja a observação de codificação no passo 2. Para corrigir um banco já populado:
+Veja a observação de codificação no passo 2. Para corrigir um banco já populado, recrie o sistema pré-configurado (a partir da pasta `multicompendio-backend`). Atenção: isso apaga os personagens criados nele.
 
 ```bash
-psql -U postgres -d multicompendio -c "DELETE FROM rpg_systems WHERE is_preconfigured = TRUE;"
-psql -U postgres -d multicompendio -f sql/seed.sql
+psql -U postgres -d multicompendio -f sql/reset_preconfigured_system.sql
 ```
