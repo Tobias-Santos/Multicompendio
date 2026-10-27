@@ -1,3 +1,4 @@
+import { createExampleCharacter } from './exampleCharacterService';
 import * as usersRepo from '../repositories/usersRepository';
 import { ConflictError, UnauthorizedError, ValidationError } from '../errors';
 import { hashPassword, verifyPassword } from '../utils/password';
@@ -31,6 +32,10 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
 
   try {
     const user = await usersRepo.insertUser(name, email, await hashPassword(password));
+    // o personagem de exemplo é um brinde: se algo falhar, a conta é criada do mesmo jeito
+    await createExampleCharacter(user.id).catch((err) =>
+      console.error('Não foi possível criar o personagem de exemplo:', err),
+    );
     return { user, token: signToken(user.id) };
   } catch (err) {
     // duas requisições simultâneas com o mesmo e-mail: o índice único segura a segunda
