@@ -56,7 +56,9 @@ export function ImageField({ value, onChange }: Props) {
 
       <label className="file-field">
         <span className="muted">
-          {isUploadedFile ? 'Arquivo selecionado — ' : ''}ou envie um arquivo (até 2MB)
+          {isUploadedFile
+            ? 'Imagem enviada. Para trocar, escolha outro arquivo (até 2MB).'
+            : 'ou envie um arquivo (até 2MB)'}
         </span>
         <input
           type="file"

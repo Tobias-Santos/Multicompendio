@@ -20,6 +20,20 @@ export function setSessionExpiredHandler(handler: (() => void) | null): void {
   onSessionExpired = handler;
 }
 
+// Erro devolvido pelo servidor (resposta com status de erro). Guarda o status e o corpo
+// para quem precisa distinguir os casos (ex.: o salvamento automático da história).
+// Continua sendo um Error comum: quem só usa `err.message` não precisa mudar nada.
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly body: unknown,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
 // Rotas que não usam sessão: um 401 ali significa "senha incorreta", não "sessão expirada".
 const PUBLIC_PATHS = ['/auth/login', '/auth/register'];
 
@@ -38,9 +52,11 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
 
   if (!res.ok) {
     let message = 'Algo deu errado. Tente novamente.';
+    let body: unknown = null;
     try {
-      const body = await res.json();
-      if (body?.error) message = body.error;
+      body = await res.json();
+      const error = (body as { error?: string } | null)?.error;
+      if (error) message = error;
     } catch {
       // resposta sem corpo JSON — mantém a mensagem padrão
     }
@@ -49,7 +65,7 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
       clearToken();
       onSessionExpired?.();
     }
-    throw new Error(message);
+    throw new ApiError(message, res.status, body);
   }
 
   if (res.status === 204) return undefined as T;

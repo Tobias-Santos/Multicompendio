@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { BrandLogo } from './BrandLogo';
+import { clearAllDrafts, flushAllPending } from '../story/drafts';
 
 // Barra no topo das páginas internas: a marca (leva à tela inicial) e,
 // do outro lado, quem está com a conta aberta e o botão de sair.
@@ -10,7 +11,10 @@ export function AppBar() {
 
   if (!user) return null;
 
-  function handleLogout() {
+  async function handleLogout() {
+    // o que ainda não foi salvo (história em edição) sai antes de a sessão ser apagada
+    await flushAllPending();
+    clearAllDrafts();
     logout();
     navigate('/entrar');
   }

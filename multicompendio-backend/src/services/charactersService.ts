@@ -119,7 +119,7 @@ function validateValues(
 }
 
 // Só o dono enxerga e altera o personagem; para os outros ele "não existe".
-async function loadOwnCharacter(id: string, userId: string) {
+export async function loadOwnCharacter(id: string, userId: string) {
   const record = await charactersRepo.findById(id);
   if (!record || record.owner_user_id !== userId) {
     throw new NotFoundError('Personagem não encontrado.');

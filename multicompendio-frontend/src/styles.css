@@ -860,3 +860,267 @@ button.ghost:hover:not(:disabled) {
 .inline-edit input {
   margin-top: 0;
 }
+
+/* ------------------------------------------------------------
+   Abas da página do personagem (Ficha | História de origem)
+   ------------------------------------------------------------ */
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin: 1.25rem 0 1rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.tabs .tab {
+  margin: 0 0 -1px;
+  padding: 0.6rem 1.1rem;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid transparent;
+  border-top: 3px solid transparent;
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+}
+
+.tabs .tab:hover:not(:disabled) {
+  filter: none;
+  background: var(--border);
+}
+
+/* aba atual: fundo de papel, borda e faixa de acento no topo (não depende só de cor) */
+.tabs .tab[aria-selected='true'] {
+  background: var(--surface);
+  border-color: var(--line-soft);
+  border-bottom-color: var(--surface);
+  border-top-color: var(--accent);
+}
+
+.tabs .tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------
+   Editor da história de origem
+   ------------------------------------------------------------ */
+.story-topline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 1rem;
+  margin: -0.2rem 0 0.7rem;
+}
+
+.story-hint {
+  margin: 0;
+  flex: 1 1 18rem;
+  font-size: 0.9rem;
+}
+
+.story-read-toggle {
+  margin: 0;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.82rem;
+}
+
+.story-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-bottom: 0.8rem;
+  padding: 0.7rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-left: 4px solid var(--line);
+  border-radius: 8px;
+}
+
+.story-banner-alert {
+  border-color: var(--accent-text);
+  border-left-width: 5px;
+}
+
+.story-banner p {
+  margin: 0;
+  flex: 1 1 18rem;
+}
+
+.story-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.story-banner button {
+  margin: 0;
+}
+
+.story-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.35rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px 8px 0 0;
+}
+
+.tb-btn {
+  margin: 0;
+  min-width: 1.9rem;
+  padding: 0.35rem 0.38rem; /* altura de ~26 px: acima do mínimo de 24 px para alvos de toque (WCAG 2.5.8) */
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.tb-btn:hover:not(:disabled) {
+  filter: none;
+  border-color: var(--line);
+  background: var(--bg);
+}
+
+/* ativo: cores invertidas (tinta sobre papel vira papel sobre tinta) */
+.tb-btn[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+.tb-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.tb-sep {
+  width: 1px;
+  height: 1.4rem;
+  margin: 0 0.15rem;
+  background: var(--line-soft);
+}
+
+/* em telas largas a barra acompanha a rolagem; no celular ela ocuparia espaço demais do texto */
+@media (min-width: 640px) {
+  .story-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+}
+
+.story-surface {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+}
+
+.story-surface:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.story-reading {
+  background: var(--surface);
+}
+
+.story-prose {
+  min-height: 22rem;
+  padding: 1rem 1.25rem;
+  outline: none;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: var(--ink);
+}
+
+.story-prose > * + * {
+  margin-top: 0.8rem;
+}
+
+.story-prose p {
+  margin-bottom: 0;
+}
+
+.story-prose h1,
+.story-prose h2 {
+  font-family: var(--font-display);
+  line-height: 1.25;
+}
+
+.story-prose h1 {
+  font-size: 1.55rem;
+  margin-top: 1.4rem;
+}
+
+.story-prose h2 {
+  font-size: 1.25rem;
+  margin-top: 1.1rem;
+}
+
+.story-prose ul,
+.story-prose ol {
+  padding-left: 1.5rem;
+}
+
+.story-prose li > p {
+  margin: 0;
+}
+
+.story-prose blockquote {
+  margin-left: 0;
+  padding: 0.1rem 0 0.1rem 1rem;
+  border-left: 3px solid var(--line);
+  font-style: italic;
+}
+
+.story-prose hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 1.4rem 0;
+}
+
+/* texto de apoio quando o editor está vazio */
+.story-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.story-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 1.2rem;
+  margin-top: 0.7rem;
+  font-size: 0.85rem;
+}
+
+.story-status,
+.story-count {
+  margin: 0;
+  color: var(--muted);
+}
+
+.story-status-retrying,
+.story-status-invalid,
+.story-status-conflict,
+.story-count-warn {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.story-save-now {
+  margin: 0;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.82rem;
+}

@@ -3,6 +3,7 @@ import {
   ConflictError,
   ForbiddenError,
   NotFoundError,
+  StaleRevisionError,
   UnauthorizedError,
   ValidationError,
 } from '../errors';
@@ -16,6 +17,8 @@ export function handleError(res: Response, err: unknown): void {
     res.status(403).json({ error: err.message });
   } else if (err instanceof NotFoundError) {
     res.status(404).json({ error: err.message });
+  } else if (err instanceof StaleRevisionError) {
+    res.status(409).json({ error: err.message, code: 'stale_revision', revision: err.currentRevision });
   } else if (err instanceof ConflictError) {
     res.status(409).json({ error: err.message });
   } else {
