@@ -149,6 +149,8 @@ CREATE TABLE characters (
     system_id       UUID NOT NULL REFERENCES rpg_systems(id) ON DELETE RESTRICT,
     owner_user_id   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name            VARCHAR(120) NOT NULL,
+    -- visível, só para leitura, às outras pessoas do mesmo sistema; privado por padrão
+    is_public       BOOLEAN NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -194,3 +196,24 @@ CREATE TABLE character_stories (
 CREATE TRIGGER trg_character_stories_updated_at
 BEFORE UPDATE ON character_stories
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ------------------------------------------------------------
+-- v1.4 — Compartilhamento de sistemas
+-- ------------------------------------------------------------
+-- Quem entrou em um sistema de outra pessoa pelo link de convite.
+-- (O dono do sistema não aparece aqui: ele já é o dono.)
+CREATE TABLE system_members (
+    system_id   UUID NOT NULL REFERENCES rpg_systems(id) ON DELETE CASCADE,
+    user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    joined_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (system_id, user_id)
+);
+CREATE INDEX idx_system_members_user ON system_members(user_id);
+
+-- Link de convite do sistema: no máximo um ativo por sistema.
+-- Gerar um novo link troca o código e invalida o anterior; apagar a linha desativa o convite.
+CREATE TABLE system_invites (
+    system_id   UUID PRIMARY KEY REFERENCES rpg_systems(id) ON DELETE CASCADE,
+    token       VARCHAR(64) NOT NULL UNIQUE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);

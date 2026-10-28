@@ -31,7 +31,7 @@ export async function insertSystem(
   return (await findSystemById(inserted.rows[0].id)) as RpgSystem;
 }
 
-// Sistemas que o usuário enxerga: os pré-configurados e os que ele criou.
+// Sistemas que o usuário enxerga pelo nome: os pré-configurados e os que ele criou.
 export async function findVisibleSystemByName(
   name: string,
   userId: string,
@@ -54,6 +54,7 @@ export async function listVisibleSystems(userId: string): Promise<RpgSystem[]> {
   const result = await pool.query<RpgSystem>(
     `${SELECT_SYSTEM}
       WHERE s.is_preconfigured OR s.owner_user_id = $1
+         OR EXISTS (SELECT 1 FROM system_members m WHERE m.system_id = s.id AND m.user_id = $1)
       ORDER BY lower(s.name)`,
     [userId],
   );

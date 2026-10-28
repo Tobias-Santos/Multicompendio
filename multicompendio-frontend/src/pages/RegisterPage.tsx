@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { InfoLabel } from '../components/InfoLabel';
 import { BrandLogo } from '../components/BrandLogo';
@@ -7,6 +7,9 @@ import { BrandLogo } from '../components/BrandLogo';
 export function RegisterPage() {
   const { user, loading, register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // quem veio de um link de convite volta para ele depois de criar a conta
+  const from = (location.state as { from?: string } | null)?.from ?? '/';
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -15,7 +18,7 @@ export function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (!loading && user) return <Navigate to="/" replace />;
+  if (!loading && user) return <Navigate to={from} replace />;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,7 +32,7 @@ export function RegisterPage() {
     setSubmitting(true);
     try {
       await register(name, email, password);
-      navigate('/', { replace: true });
+      navigate(from, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível criar a conta.');
     } finally {
@@ -102,7 +105,7 @@ export function RegisterPage() {
         </button>
 
         <p className="muted auth-switch">
-          Já tem conta? <Link to="/entrar">Entrar</Link>
+          Já tem conta? <Link to="/entrar" state={location.state}>Entrar</Link>
         </p>
       </form>
     </div>

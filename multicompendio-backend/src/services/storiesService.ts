@@ -1,12 +1,12 @@
 import * as storiesRepo from '../repositories/storiesRepository';
-import { loadOwnCharacter } from './charactersService';
+import { loadOwnCharacter, loadViewableCharacter } from './charactersService';
 import { StaleRevisionError, ValidationError } from '../errors';
 import { validateStoryDocument } from '../utils/storyDocument';
 import { StoryRecord, StorySaveInput, StorySaveResult } from '../types/story';
 
 // RF08 — abre a história do personagem (só o dono). Sem história ainda: revisão 0.
 export async function getStory(characterId: string, userId: string): Promise<StoryRecord> {
-  await loadOwnCharacter(characterId, userId);
+  await loadViewableCharacter(characterId, userId); // quem vê o personagem público lê a história; só o dono grava
   const row = await storiesRepo.findByCharacter(characterId);
   if (!row) return { content: null, revision: 0, updated_at: null };
   return { content: row.content, revision: row.revision, updated_at: row.updated_at };

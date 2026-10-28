@@ -7,6 +7,7 @@ const router = Router();
 router.get('/:id', controller.getOne);
 router.put('/:id', controller.update);
 router.delete('/:id', controller.remove);
+router.put('/:id/visibility', controller.setVisibility);
 
 // RF08 — história de origem
 router.get('/:id/story', stories.getOne);

@@ -20,6 +20,7 @@ export interface RpgSystem {
 // O que a API devolve ao front: o sistema + se quem está pedindo pode alterá-lo.
 export interface SystemView extends RpgSystem {
   can_edit: boolean;
+  is_member: boolean; // entrou neste sistema por convite (não é o dono)
 }
 
 export interface SystemAttribute {

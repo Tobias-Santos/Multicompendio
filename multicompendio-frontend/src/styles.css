@@ -1124,3 +1124,139 @@ button.ghost:hover:not(:disabled) {
   padding: 0.3rem 0.8rem;
   font-size: 0.82rem;
 }
+
+/* ------------------------------------------------------------
+   Compartilhamento de sistemas e personagens públicos
+   ------------------------------------------------------------ */
+.badge {
+  display: inline-block;
+  margin-left: 0.6rem;
+  padding: 0.1rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+/* público: contorno mais forte (não depende só de cor) */
+.badge-public {
+  border-color: var(--accent-text);
+  color: var(--accent-text);
+}
+
+.share-panel p {
+  margin-top: 0;
+}
+
+.share-link {
+  display: block;
+  margin: 0.8rem 0 0.6rem;
+}
+
+.share-link-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-weight: 600;
+}
+
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.share-actions button {
+  margin: 0;
+}
+
+.share-members {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.invite-card h2 {
+  margin-top: 0.4rem;
+}
+
+.visibility {
+  margin: 0 0 1rem;
+  padding: 0.7rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+}
+
+.visibility-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+.visibility-label input {
+  width: auto;
+  margin-top: 0.25rem;
+}
+
+.visibility .error {
+  margin: 0.5rem 0 0;
+}
+
+.visibility-note {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+.readonly-banner {
+  margin: 0 0 1rem;
+  padding: 0.7rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-text);
+  border-radius: 8px;
+}
+
+/* fieldset só para desabilitar os campos de uma vez, sem o visual padrão do navegador */
+.plain-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.story-reader .story-prose {
+  min-height: 8rem;
+}
+
+/* espaço entre o cartão de compartilhamento e o cartão acima */
+.share-panel {
+  margin-top: 1rem;
+}
+
+.invite-card h1 {
+  margin-top: 0;
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+}
+
+/* campos de uma ficha somente leitura: sem fundo de campo e com borda tracejada, para ficar
+   claro que não são editáveis; o texto continua com contraste total (não "apagado") */
+.plain-fieldset:disabled input,
+.plain-fieldset:disabled textarea,
+.plain-fieldset:disabled select,
+form input:disabled,
+form textarea:disabled,
+form select:disabled {
+  background: transparent;
+  border-style: dashed;
+  color: var(--ink);
+  -webkit-text-fill-color: var(--ink);
+  opacity: 1;
+  cursor: default;
+}

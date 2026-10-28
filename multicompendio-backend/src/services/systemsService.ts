@@ -10,26 +10,29 @@ import {
   SystemAttribute,
   SystemView,
 } from '../types/system';
+import * as sharingRepo from '../repositories/sharingRepository';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
 
 // ------------------------------------------------------------------
 // Posse e permissões (RF37):
-//  - o usuário vê os sistemas pré-configurados e os que ele mesmo criou;
-//  - só o proprietário altera ou exclui o que é dele;
+//  - o usuário vê os sistemas pré-configurados, os que ele criou e os em que entrou por convite;
+//  - só o proprietário altera ou exclui o que é dele (quem entrou por convite só consulta e cria
+//    personagens);
 //  - sistemas pré-configurados são somente para consulta.
 // ------------------------------------------------------------------
-function isVisible(system: RpgSystem, userId: string): boolean {
-  return system.is_preconfigured || system.owner_user_id === userId;
+async function isVisible(system: RpgSystem, userId: string): Promise<boolean> {
+  if (system.is_preconfigured || system.owner_user_id === userId) return true;
+  return sharingRepo.isMember(system.id, userId);
 }
 
-function toView(system: RpgSystem, userId: string): SystemView {
-  return { ...system, can_edit: !system.is_preconfigured && system.owner_user_id === userId };
+function toView(system: RpgSystem, userId: string, isMember = false): SystemView {
+  return { ...system, can_edit: !system.is_preconfigured && system.owner_user_id === userId, is_member: isMember };
 }
 
 export async function loadVisibleSystem(id: string, userId: string): Promise<RpgSystem> {
   const system = await systemsRepo.findSystemById(id);
   // Sistema de outra pessoa é tratado como inexistente: não revela que ele existe.
-  if (!system || !isVisible(system, userId)) throw new NotFoundError('Sistema não encontrado.');
+  if (!system || !(await isVisible(system, userId))) throw new NotFoundError('Sistema não encontrado.');
   return system;
 }
 
@@ -84,12 +87,16 @@ export async function getSystem(
 ): Promise<{ system: SystemView; attributes: SystemAttribute[] }> {
   const system = await loadVisibleSystem(id, userId);
   const attributes = await attributesRepo.listAttributesBySystem(id);
-  return { system: toView(system, userId), attributes };
+  const isMember = system.owner_user_id !== userId && !system.is_preconfigured && (await sharingRepo.isMember(id, userId));
+  return { system: toView(system, userId, isMember), attributes };
 }
 
 export async function listAllSystems(userId: string): Promise<SystemView[]> {
-  const systems = await systemsRepo.listVisibleSystems(userId);
-  return systems.map((system) => toView(system, userId));
+  const [systems, memberOf] = await Promise.all([
+    systemsRepo.listVisibleSystems(userId),
+    sharingRepo.listMembershipSystemIds(userId),
+  ]);
+  return systems.map((system) => toView(system, userId, memberOf.has(system.id)));
 }
 
 // Edição das propriedades do próprio sistema (versão, descrição, idioma,
@@ -162,6 +169,14 @@ export async function addAttribute(
     throw new ValidationError('Todo atributo precisa de um nome.');
   }
   validateAttributeShape(attr);
+
+  // Um atributo obrigatório novo deixaria sem o campo as fichas que já existem (inclusive as de
+  // outras pessoas, quando o sistema é compartilhado), então só entra enquanto não há personagens.
+  if (attr.is_required && (await charactersRepo.countBySystem(systemId)) > 0) {
+    throw new ConflictError(
+      'Este sistema já tem personagens, então não dá para criar um atributo obrigatório: as fichas existentes ficariam sem esse campo. Crie o atributo como opcional.',
+    );
+  }
 
   const existingAttrs = await attributesRepo.listAttributesBySystem(systemId);
   const normalizedName = attr.name.trim().toLowerCase();
@@ -240,6 +255,16 @@ export async function editAttribute(
   // Seção: texto vazio tira o atributo da seção (o repositório trata '' como remover).
   if (changes.group_name !== undefined) {
     changes = { ...changes, group_name: normalizeGroupName(changes.group_name) };
+  }
+
+  // Tornar obrigatório um atributo existente só vale se todas as fichas já têm valor nele.
+  if (changes.is_required === true && !current.is_required) {
+    const total = await charactersRepo.countBySystem(systemId);
+    if (total > 0 && (await charactersRepo.countValuesByAttribute(attributeId)) < total) {
+      throw new ConflictError(
+        `O atributo "${current.name}" não pode ser obrigatório porque há fichas que ainda não o preenchem.`,
+      );
+    }
   }
 
   const merged: AttributeInput = {

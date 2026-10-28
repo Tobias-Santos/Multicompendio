@@ -14,6 +14,7 @@ export interface RpgSystem {
   is_preconfigured: boolean;
   owner_name: string | null; // nome de quem criou; vazio nos sistemas que já vêm com o app
   can_edit: boolean;         // se quem está logado pode alterar este sistema
+  is_member: boolean;        // se entrou neste sistema por convite (não é o dono)
   created_at: string;
   updated_at: string;
 }

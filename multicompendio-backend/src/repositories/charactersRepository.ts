@@ -3,23 +3,32 @@ import { pool } from '../db/pool';
 import { CharacterRecord, CharacterSummary, CharacterValue, CharacterValues } from '../types/character';
 
 const SELECT_CHARACTER = `
-  SELECT c.id, c.system_id, c.owner_user_id, c.name, c.created_at, c.updated_at,
-         s.name AS system_name
+  SELECT c.id, c.system_id, c.owner_user_id, c.name, c.is_public, c.created_at, c.updated_at,
+         s.name AS system_name, s.is_preconfigured AS system_is_preconfigured,
+         s.owner_user_id AS system_owner_user_id, u.name AS owner_name
     FROM characters c
-    JOIN rpg_systems s ON s.id = c.system_id`;
+    JOIN rpg_systems s ON s.id = c.system_id
+    JOIN users u ON u.id = c.owner_user_id`;
 
-export async function listBySystemAndOwner(
-  systemId: string,
-  ownerUserId: string,
-): Promise<CharacterSummary[]> {
+// Os personagens do usuário no sistema e os públicos das outras pessoas dele. Nos sistemas
+// pré-configurados (que são de todos) ninguém enxerga o personagem de ninguém.
+export async function listVisibleInSystem(systemId: string, userId: string): Promise<CharacterSummary[]> {
   const result = await pool.query<CharacterSummary>(
-    `SELECT id, system_id, name, created_at, updated_at
-       FROM characters
-      WHERE system_id = $1 AND owner_user_id = $2
-      ORDER BY lower(name), created_at`,
-    [systemId, ownerUserId],
+    `SELECT c.id, c.system_id, c.name, c.is_public, u.name AS owner_name,
+            (c.owner_user_id = $2) AS is_mine, c.created_at, c.updated_at
+       FROM characters c
+       JOIN rpg_systems s ON s.id = c.system_id
+       JOIN users u ON u.id = c.owner_user_id
+      WHERE c.system_id = $1
+        AND (c.owner_user_id = $2 OR (c.is_public AND NOT s.is_preconfigured))
+      ORDER BY (c.owner_user_id = $2) DESC, lower(c.name), c.created_at`,
+    [systemId, userId],
   );
   return result.rows;
+}
+
+export async function setPublic(id: string, isPublic: boolean): Promise<void> {
+  await pool.query(`UPDATE characters SET is_public = $2 WHERE id = $1`, [id, isPublic]);
 }
 
 export async function findById(id: string): Promise<CharacterRecord | null> {

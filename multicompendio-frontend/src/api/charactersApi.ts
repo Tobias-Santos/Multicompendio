@@ -23,6 +23,14 @@ export function updateCharacter(id: string, input: CharacterInput): Promise<Char
   });
 }
 
+// Torna o personagem público (visível, só para leitura, às outras pessoas do sistema) ou privado.
+export function setVisibility(id: string, isPublic: boolean): Promise<CharacterDetail> {
+  return request(`/characters/${id}/visibility`, {
+    method: 'PUT',
+    body: JSON.stringify({ is_public: isPublic }),
+  });
+}
+
 export function deleteCharacter(id: string): Promise<void> {
   return request(`/characters/${id}`, { method: 'DELETE' });
 }

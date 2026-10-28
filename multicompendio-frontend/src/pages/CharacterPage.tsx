@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { CharacterDetail } from '../types/character';
 import { deleteCharacter, getCharacter, updateCharacter } from '../api/charactersApi';
 import { CharacterForm } from '../components/CharacterForm';
+import { VisibilityToggle } from '../components/VisibilityToggle';
 // o editor (ProseMirror) é pesado e só é preciso na aba da história: carrega sob demanda
 const StoryPanel = lazy(() => import('../components/StoryPanel').then((m) => ({ default: m.StoryPanel })));
 
@@ -76,6 +77,8 @@ export function CharacterPage() {
     );
   }
 
+  const canEdit = data.character.can_edit;
+
   return (
     <div className="layout narrow">
       <header>
@@ -84,6 +87,20 @@ export function CharacterPage() {
         </Link>
         <h1>{data.character.name}</h1>
       </header>
+
+      {canEdit ? (
+        <VisibilityToggle
+          characterId={id}
+          isPublic={data.character.is_public}
+          isPreconfiguredSystem={data.character.system_is_preconfigured}
+          onChanged={setData}
+        />
+      ) : (
+        <p className="readonly-banner" role="note">
+          Personagem de <strong>{data.character.owner_name}</strong>, público neste sistema. Você pode ler a ficha e a
+          história, mas não editar.
+        </p>
+      )}
 
       <div className="tabs" role="tablist" aria-label="Partes do personagem" onKeyDown={onTabKeyDown}>
         <button
@@ -119,6 +136,7 @@ export function CharacterPage() {
           attributes={data.attributes}
           initialName={data.character.name}
           initialValues={data.values}
+          readOnly={!canEdit}
           submitLabel="Salvar alterações"
           submittingLabel="Salvando..."
           onSubmit={async (input) => {
@@ -130,16 +148,18 @@ export function CharacterPage() {
       <div role="tabpanel" id="painel-historia" aria-labelledby="aba-historia" hidden={tab !== 'historia'}>
         {storyOpened && (
           <Suspense fallback={<p className="muted">Carregando o editor…</p>}>
-            <StoryPanel characterId={id} />
+            <StoryPanel characterId={id} readOnly={!canEdit} ownerName={data.character.owner_name} />
           </Suspense>
         )}
       </div>
 
       {actionError && <p className="error">{actionError}</p>}
 
-      <button type="button" className="danger" onClick={handleDelete}>
-        Excluir personagem
-      </button>
+      {canEdit && (
+        <button type="button" className="danger" onClick={handleDelete}>
+          Excluir personagem
+        </button>
+      )}
     </div>
   );
 }

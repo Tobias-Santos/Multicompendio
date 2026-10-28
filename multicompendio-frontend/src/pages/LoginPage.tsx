@@ -72,7 +72,7 @@ export function LoginPage() {
         </button>
 
         <p className="muted auth-switch">
-          Ainda não tem conta? <Link to="/criar-conta">Criar conta</Link>
+          Ainda não tem conta? <Link to="/criar-conta" state={location.state}>Criar conta</Link>
         </p>
       </form>
     </div>

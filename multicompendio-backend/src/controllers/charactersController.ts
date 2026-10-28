@@ -4,6 +4,15 @@ import { handleError } from '../utils/httpError';
 
 const userOf = (req: Request): string => req.userId as string;
 
+// PUT /characters/:id/visibility — público ou privado para as outras pessoas do sistema
+export async function setVisibility(req: Request, res: Response): Promise<void> {
+  try {
+    res.json(await charactersService.setVisibility(req.params.id, req.body?.is_public, userOf(req)));
+  } catch (err) {
+    handleError(res, err);
+  }
+}
+
 // GET /systems/:id/characters — RF13
 export async function list(req: Request, res: Response): Promise<void> {
   try {

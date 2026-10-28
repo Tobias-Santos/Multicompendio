@@ -1,6 +1,7 @@
 import { pool } from '../db/pool';
 import * as charactersRepo from '../repositories/charactersRepository';
 import * as attributesRepo from '../repositories/attributesRepository';
+import * as sharingRepo from '../repositories/sharingRepository';
 import { loadVisibleSystem } from './systemsService';
 import { NotFoundError, ValidationError } from '../errors';
 import { SystemAttribute } from '../types/system';
@@ -127,22 +128,52 @@ export async function loadOwnCharacter(id: string, userId: string) {
   return record;
 }
 
-// RF13 — lista os personagens do usuário em um sistema
+// Quem pode VER um personagem: o dono; ou, se o dono o deixou público, qualquer pessoa do mesmo
+// sistema (quem o criou ou quem entrou por convite). Nos sistemas pré-configurados, que são de
+// todos, o personagem nunca é visto por outra pessoa. Para quem não pode, ele "não existe".
+export async function loadViewableCharacter(id: string, userId: string) {
+  const record = await charactersRepo.findById(id);
+  if (!record) throw new NotFoundError('Personagem não encontrado.');
+  if (record.owner_user_id === userId) return record;
+
+  const sameSystem =
+    record.system_owner_user_id === userId || (await sharingRepo.isMember(record.system_id, userId));
+  if (!record.is_public || record.system_is_preconfigured || !sameSystem) {
+    throw new NotFoundError('Personagem não encontrado.');
+  }
+  return record;
+}
+
+// RF07 — lista os personagens do usuário em um sistema, mais os públicos das outras pessoas dele
 export async function listCharacters(systemId: string, userId: string): Promise<CharacterSummary[]> {
   await loadVisibleSystem(systemId, userId);
-  return charactersRepo.listBySystemAndOwner(systemId, userId);
+  return charactersRepo.listVisibleInSystem(systemId, userId);
 }
 
 // RF14 — abre um personagem (com os atributos do sistema, para montar o formulário)
 export async function getCharacter(id: string, userId: string): Promise<CharacterDetail> {
-  const record = await loadOwnCharacter(id, userId);
+  const record = await loadViewableCharacter(id, userId);
   const [attributes, values] = await Promise.all([
     attributesRepo.listAttributesBySystem(record.system_id),
     charactersRepo.getValues(id),
   ]);
 
-  const { owner_user_id: _owner, ...character } = record;
-  return { character, attributes, values };
+  return {
+    character: {
+      id: record.id,
+      system_id: record.system_id,
+      name: record.name,
+      is_public: record.is_public,
+      owner_name: record.owner_name,
+      system_name: record.system_name,
+      system_is_preconfigured: record.system_is_preconfigured,
+      can_edit: record.owner_user_id === userId,
+      created_at: record.created_at,
+      updated_at: record.updated_at,
+    },
+    attributes,
+    values,
+  };
 }
 
 // RF09, RF10, RF11, RF12 — cria um personagem em um sistema existente
@@ -203,4 +234,18 @@ export async function updateCharacter(
 export async function removeCharacter(id: string, userId: string): Promise<void> {
   await loadOwnCharacter(id, userId);
   await charactersRepo.deleteById(id);
+}
+
+// Define se o personagem fica visível, só para leitura, às outras pessoas do sistema (só o dono).
+// Nos sistemas pré-configurados ele é sempre privado.
+export async function setVisibility(id: string, isPublic: unknown, userId: string): Promise<CharacterDetail> {
+  const record = await loadOwnCharacter(id, userId);
+  if (typeof isPublic !== 'boolean') throw new ValidationError('Informe se o personagem fica público ou privado.');
+  if (isPublic && record.system_is_preconfigured) {
+    throw new ValidationError(
+      'Os personagens do sistema pré-instalado são sempre privados, porque esse sistema é de todos. Crie ou entre em um sistema próprio para compartilhar fichas.',
+    );
+  }
+  await charactersRepo.setPublic(id, isPublic);
+  return getCharacter(id, userId);
 }

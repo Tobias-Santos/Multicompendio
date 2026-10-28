@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { SystemWithAttributes } from '../types/system';
 import { CharacterSummary } from '../types/character';
 import { getSystem, deleteSystem } from '../api/systemsApi';
+import { leaveSystem } from '../api/sharingApi';
+import { SharePanel } from '../components/SharePanel';
 import { deleteCharacter, listCharacters } from '../api/charactersApi';
 import { SystemPropertiesForm } from '../components/SystemPropertiesForm';
 import { AttributesTable } from '../components/AttributesTable';
@@ -44,6 +46,17 @@ export function SystemPage() {
       reloadCharacters();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'Não foi possível excluir o personagem.');
+    }
+  }
+
+  async function handleLeave() {
+    if (!id || !confirm('Sair deste sistema? Você deixa de vê-lo e de criar personagens nele.')) return;
+    setActionError(null);
+    try {
+      await leaveSystem(id);
+      navigate('/');
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Não foi possível sair do sistema.');
     }
   }
 
@@ -98,12 +111,26 @@ export function SystemPage() {
                 onUpdated={(system) => setData((prev) => (prev ? { ...prev, system } : prev))}
               />
 
+              <SharePanel systemId={id} />
+
               <button type="button" onClick={handleDeleteSystem} className="danger">
                 Excluir sistema
               </button>
             </>
           ) : (
-            <SystemSummary system={data.system} />
+            <>
+              <SystemSummary system={data.system} />
+              {data.system.is_member && (
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={handleLeave}
+                  title="Você só pode sair se não tiver personagens neste sistema."
+                >
+                  Sair deste sistema
+                </button>
+              )}
+            </>
           )}
         </div>
 
@@ -159,8 +186,22 @@ export function SystemPage() {
             Novo personagem
           </Link>
         </div>
-        <CharacterList characters={characters} onDelete={handleDeleteCharacter} />
+        <CharacterList
+          characters={characters.filter((c) => c.is_mine)}
+          onDelete={handleDeleteCharacter}
+          showVisibility={!data.system.is_preconfigured}
+        />
       </section>
+
+      {characters.some((c) => !c.is_mine) && (
+        <section className="card characters-card" aria-labelledby="titulo-publicos">
+          <div className="card-header">
+            <h2 id="titulo-publicos">Personagens públicos</h2>
+          </div>
+          <p className="muted">Personagens que outras pessoas deste sistema deixaram visíveis. Você pode ler, mas não editar.</p>
+          <CharacterList characters={characters.filter((c) => !c.is_mine)} showOwner />
+        </section>
+      )}
     </div>
   );
 }

@@ -39,7 +39,9 @@ export function SystemSummary({ system }: Props) {
       <p className="readonly-note">
         {system.is_preconfigured
           ? 'Este sistema já vem com o Multicompêndio e é somente para consulta.'
-          : 'Este sistema é somente para consulta.'}
+          : system.is_member
+            ? `Este sistema foi compartilhado com você por ${system.owner_name}. Você pode consultá-lo e criar personagens nele; só quem o criou altera as regras.`
+            : 'Este sistema é somente para consulta.'}
       </p>
     </div>
   );

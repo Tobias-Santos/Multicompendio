@@ -8,6 +8,7 @@ interface Props {
   attributes: SystemAttribute[];
   initialName?: string;
   initialValues?: CharacterValues;
+  readOnly?: boolean; // personagem público de outra pessoa: mostra a ficha sem permitir editar
   submitLabel: string;
   submittingLabel: string;
   onSubmit: (input: CharacterInput) => Promise<void>;
@@ -63,6 +64,7 @@ export function CharacterForm({
   attributes,
   initialName = '',
   initialValues,
+  readOnly = false,
   submitLabel,
   submittingLabel,
   onSubmit,
@@ -200,6 +202,7 @@ export function CharacterForm({
           value={name}
           maxLength={120}
           aria-required={true}
+          disabled={readOnly}
           onChange={(e) => {
             setName(e.target.value);
             setSaved(false);
@@ -242,13 +245,18 @@ export function CharacterForm({
             <summary>
               {section || 'Geral'} <span className="muted">· {items.length} campos</span>
             </summary>
-            <div className="character-fields">{items.map(renderField)}</div>
+            <fieldset className="plain-fieldset" disabled={readOnly}>
+              <div className="character-fields">{items.map(renderField)}</div>
+            </fieldset>
           </details>
         ))
       ) : (
-        <div className="character-fields">{attributes.map(renderField)}</div>
+        <fieldset className="plain-fieldset" disabled={readOnly}>
+          <div className="character-fields">{attributes.map(renderField)}</div>
+        </fieldset>
       )}
 
+      {!readOnly && (
       <div className="form-actions">
         <button type="submit" disabled={submitting}>
           {submitting ? submittingLabel : submitLabel}
@@ -256,6 +264,7 @@ export function CharacterForm({
         {error && <span className="error">{error}</span>}
         {saved && !error && <span className="muted">Salvo.</span>}
       </div>
+      )}
     </form>
   );
 }
