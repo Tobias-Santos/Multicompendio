@@ -5,7 +5,7 @@
 
 -- Tipo de dado que um atributo de sistema pode assumir.
 -- 'select' usa a coluna `options` (JSONB) para armazenar as escolhas possíveis.
-CREATE TYPE attribute_data_type AS ENUM ('number', 'text', 'longtext', 'boolean', 'select');
+CREATE TYPE attribute_data_type AS ENUM ('number', 'text', 'longtext', 'boolean', 'select', 'text_number');
 
 -- ------------------------------------------------------------
 -- RF37 — Usuários (cadastro e entrada na aplicação)

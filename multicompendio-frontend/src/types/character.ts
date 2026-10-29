@@ -1,6 +1,12 @@
 import { SystemAttribute } from './system';
 
-export type CharacterValue = string | number | boolean;
+// Valor de um campo "texto com número": o número é opcional.
+export interface TextNumberValue {
+  number: number | null;
+  text: string;
+}
+
+export type CharacterValue = string | number | boolean | TextNumberValue;
 
 // Chave: id do atributo do sistema
 export type CharacterValues = Record<string, CharacterValue>;

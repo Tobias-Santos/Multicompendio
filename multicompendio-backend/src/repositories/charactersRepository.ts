@@ -102,3 +102,29 @@ export async function countValuesByAttribute(attributeId: string): Promise<numbe
   );
   return Number(result.rows[0].total);
 }
+
+// Quantos valores já guardados ficariam fora de uma nova faixa (mínimo/máximo; nulo = sem limite).
+// Vale para o tipo número e para a parte numérica do tipo "texto com número".
+export async function countValuesOutOfRange(attributeId: string, min: number | null, max: number | null): Promise<number> {
+  const result = await pool.query<{ total: string }>(
+    `SELECT count(*) AS total FROM (
+       SELECT CASE WHEN jsonb_typeof(value) = 'object' THEN value->'number' ELSE value END AS n
+         FROM character_values WHERE attribute_id = $1
+     ) v
+      WHERE jsonb_typeof(v.n) = 'number'
+        AND (($2::numeric IS NOT NULL AND (v.n #>> '{}')::numeric < $2::numeric)
+          OR ($3::numeric IS NOT NULL AND (v.n #>> '{}')::numeric > $3::numeric))`,
+    [attributeId, min, max],
+  );
+  return Number(result.rows[0].total);
+}
+
+// Quantos valores já guardados usam uma opção que não está na nova lista.
+export async function countValuesNotInOptions(attributeId: string, options: string[]): Promise<number> {
+  const result = await pool.query<{ total: string }>(
+    `SELECT count(*) AS total FROM character_values
+      WHERE attribute_id = $1 AND jsonb_typeof(value) = 'string' AND NOT ((value #>> '{}') = ANY($2::text[]))`,
+    [attributeId, options],
+  );
+  return Number(result.rows[0].total);
+}

@@ -1,4 +1,5 @@
 import { pool } from '../db/pool';
+import { CharacterValue } from '../types/character';
 import * as attributesRepo from '../repositories/attributesRepository';
 import * as itemsRepo from '../repositories/itemsRepository';
 import { createCharacter, removeCharacter } from './charactersService';
@@ -37,7 +38,7 @@ export async function createExampleCharacter(userId: string): Promise<string | n
 
   const attributes = await attributesRepo.listAttributesBySystem(systemId);
   const idByKey = new Map(attributes.map((a) => [a.key, a.id]));
-  const values: Record<string, string | number | boolean> = {};
+  const values: Record<string, CharacterValue> = {};
   for (const [key, value] of Object.entries(exampleValues(user.rows[0].name))) {
     const id = idByKey.get(key);
     if (!id) throw new Error(`O personagem de exemplo usa o atributo "${key}", que não existe no sistema.`);

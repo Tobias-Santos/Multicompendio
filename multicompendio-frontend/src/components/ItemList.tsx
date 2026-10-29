@@ -17,7 +17,9 @@ function summaryOf(item: ItemSummary, fields: SystemAttribute[]): string {
     .slice(0, 3)
     .map((f) => {
       const v = item.values[f.id];
-      return typeof v === 'boolean' ? (v ? f.name : `Sem ${f.name.toLowerCase()}`) : String(v);
+      if (typeof v === 'boolean') return v ? f.name : `Sem ${f.name.toLowerCase()}`;
+      if (typeof v === 'object') return v.number !== null ? `${f.name} ${v.number}` : f.name;
+      return String(v);
     })
     .join(' · ');
 }

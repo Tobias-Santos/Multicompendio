@@ -25,7 +25,12 @@ function buildInitialState(attributes: SystemAttribute[], values?: CharacterValu
   for (const attr of attributes) {
     const value = values?.[attr.id];
     if (attr.data_type === 'boolean') state[attr.id] = value === true;
-    else state[attr.id] = value === undefined ? '' : String(value);
+    else if (attr.data_type === 'text_number') {
+      // dois campos na tela: o texto (chave do atributo) e o número (chave + ':n')
+      const pair = typeof value === 'object' && value !== null ? value : null;
+      state[attr.id] = pair ? pair.text : '';
+      state[`${attr.id}:n`] = pair && pair.number !== null ? String(pair.number) : '';
+    } else state[attr.id] = value === undefined ? '' : String(value);
   }
   return state;
 }
@@ -43,6 +48,18 @@ function hintFor(attr: SystemAttribute, subject: string): string {
       else if (max !== null) hint = `Informe um número até ${max}.`;
       else hint = 'Informe um número.';
       break;
+    case 'text_number': {
+      const range =
+        min !== null && max !== null
+          ? ` entre ${min} e ${max}`
+          : min !== null
+            ? ` a partir de ${min}`
+            : max !== null
+              ? ` até ${max}`
+              : '';
+      hint = `Informe, se quiser, um número${range} e escreva o texto de "${attr.name}". Use Enter para mudar de linha.`;
+      break;
+    }
     case 'boolean':
       hint = `Marque se "${attr.name}" vale para este ${subject}.`;
       break;
@@ -108,6 +125,12 @@ export function CharacterForm({
       const raw = fields[attr.id];
       if (attr.data_type === 'boolean') {
         values[attr.id] = raw === true;
+      } else if (attr.data_type === 'text_number') {
+        const numberText = String(fields[`${attr.id}:n`] ?? '').trim();
+        const text = typeof raw === 'string' ? raw : '';
+        if (numberText !== '' || text.trim() !== '') {
+          values[attr.id] = { number: numberText === '' ? null : Number(numberText), text };
+        }
       } else if (typeof raw === 'string' && raw.trim() !== '') {
         values[attr.id] = attr.data_type === 'number' ? Number(raw) : raw;
       }
@@ -128,6 +151,36 @@ export function CharacterForm({
     const label = attr.is_required ? `${attr.name} *` : attr.name;
     const value = fields[attr.id];
     const wide = attr.data_type === 'longtext' ? 'field-wide' : undefined;
+
+    // Texto com número: o número fica pequeno ao lado do nome e o texto, em uma área maior embaixo.
+    if (attr.data_type === 'text_number') {
+      return (
+        <div key={attr.id} className="field-wide field-textnumber" role="group" aria-label={attr.name}>
+          <div className="field-textnumber-head">
+            <InfoLabel text={label} info={hintFor(attr, subject)} />
+            <input
+              type="number"
+              step="any"
+              min={attr.min_value ?? undefined}
+              max={attr.max_value ?? undefined}
+              className="field-number-small"
+              aria-label={`${attr.name}: número`}
+              title="A parte numérica (opcional)."
+              value={fields[`${attr.id}:n`] as string}
+              onChange={(e) => setField(`${attr.id}:n`, e.target.value)}
+            />
+          </div>
+          <textarea
+            rows={3}
+            maxLength={5000}
+            aria-label={`${attr.name}: texto`}
+            aria-required={attr.is_required}
+            value={value as string}
+            onChange={(e) => setField(attr.id, e.target.value)}
+          />
+        </div>
+      );
+    }
 
     return (
       <label key={attr.id} className={wide}>

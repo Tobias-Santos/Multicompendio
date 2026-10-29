@@ -6,7 +6,9 @@ import {
   ATTRIBUTE_TYPE_LABELS,
   ATTRIBUTE_TYPE_ORDER,
   ITEM_FIELD_NAME_EXAMPLES,
+  hasNumberRange,
 } from '../constants/attributeTypes';
+import { SectionField } from './SectionField';
 
 const empty: AttributeInput = { name: '', data_type: 'number' };
 
@@ -33,15 +35,18 @@ export function AddAttributeForm({ systemId, onAdded, sections = [], kind = 'att
     setError(null);
     setSubmitting(true);
     try {
+      // só envia o que faz sentido para o tipo escolhido (faixa para números, opções para listas)
       await addAttribute(systemId, {
         ...attr,
+        min_value: hasNumberRange(attr.data_type) ? attr.min_value : undefined,
+        max_value: hasNumberRange(attr.data_type) ? attr.max_value : undefined,
         options:
           attr.data_type === 'select'
             ? optionsText.split(',').map((s) => s.trim()).filter(Boolean)
             : undefined,
       }, kind);
-      // mantém a seção: facilita cadastrar vários atributos seguidos no mesmo grupo
-      setAttr({ ...empty, group_name: attr.group_name });
+      // mantém a seção e a faixa (mínimo e máximo): facilita cadastrar vários atributos parecidos em seguida
+      setAttr({ ...empty, group_name: attr.group_name, min_value: attr.min_value, max_value: attr.max_value });
       setOptionsText('');
       onAdded();
     } catch (err) {
@@ -61,25 +66,15 @@ export function AddAttributeForm({ systemId, onAdded, sections = [], kind = 'att
         required
       />
       {!isItem && (
-        <>
-        <input
-          list="secoes-do-sistema"
-          placeholder="Seção (ex: Combate)"
-          title="Agrupa atributos parecidos na ficha, como Combate ou Magias. Deixe em branco para não agrupar."
-          maxLength={80}
+        <SectionField
           value={attr.group_name ?? ''}
-          onChange={(e) => update({ group_name: e.target.value })}
+          onChange={(group_name) => update({ group_name })}
+          sections={sections}
         />
-        <datalist id="secoes-do-sistema">
-          {sections.map((section) => (
-            <option key={section} value={section} />
-          ))}
-        </datalist>
-        </>
       )}
       <select
         value={attr.data_type}
-        title="Tipo de valor que este atributo vai guardar."
+        title={isItem ? 'Tipo de valor que este campo vai guardar.' : 'Tipo de valor que este atributo vai guardar. "Texto com número" guarda um número (opcional, com mínimo e máximo) e um texto.'}
         onChange={(e) => update({ data_type: e.target.value as AttributeDataType })}
       >
         {ATTRIBUTE_TYPE_ORDER.map((type) => (
@@ -89,18 +84,20 @@ export function AddAttributeForm({ systemId, onAdded, sections = [], kind = 'att
         ))}
       </select>
 
-      {attr.data_type === 'number' && (
+      {hasNumberRange(attr.data_type) && (
         <>
           <input
             type="number"
             placeholder="Mínimo"
-            title="Menor valor permitido para este atributo (opcional)."
+            title="Menor valor permitido para a parte numérica (opcional)."
+            value={attr.min_value ?? ''}
             onChange={(e) => update({ min_value: e.target.value ? Number(e.target.value) : undefined })}
           />
           <input
             type="number"
             placeholder="Máximo"
-            title="Maior valor permitido para este atributo (opcional)."
+            title="Maior valor permitido para a parte numérica (opcional)."
+            value={attr.max_value ?? ''}
             onChange={(e) => update({ max_value: e.target.value ? Number(e.target.value) : undefined })}
           />
         </>

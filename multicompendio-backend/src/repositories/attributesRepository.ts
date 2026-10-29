@@ -64,42 +64,54 @@ export async function findAttributeById(
 }
 
 // RF05 — edição de atributos específicos do sistema
+// Grava o atributo já mesclado pelo serviço (todos os campos explícitos, então limites e opções
+// podem ser tirados). group_name: indefinido mantém a seção; texto vazio tira o atributo da seção.
+export interface AttributeUpdate {
+  name: string;
+  data_type: AttributeInput['data_type'];
+  default_value: string | null;
+  min_value: number | null;
+  max_value: number | null;
+  options: string[] | null;
+  is_required: boolean;
+  display_order: number;
+  group_name?: string;
+}
+
 export async function updateAttribute(
   attributeId: string,
-  attr: Partial<AttributeInput>,
+  fields: AttributeUpdate,
   kind: FieldKind = 'attribute',
 ): Promise<SystemAttribute | null> {
   const result = await pool.query<SystemAttribute>(
     `UPDATE ${TABLE[kind]} SET
-       name          = COALESCE($2, name),
-       data_type     = COALESCE($3, data_type),
-       default_value = COALESCE($4, default_value),
-       min_value     = COALESCE($5, min_value),
-       max_value     = COALESCE($6, max_value),
-       options       = COALESCE($7, options),
-       is_required   = COALESCE($8, is_required),
-       display_order = COALESCE($9, display_order),
-       -- undefined mantém a seção atual; texto vazio tira o atributo da seção
+       name          = $2,
+       data_type     = $3,
+       default_value = $4,
+       min_value     = $5,
+       max_value     = $6,
+       options       = $7::jsonb,
+       is_required   = $8,
+       display_order = $9,
        group_name    = CASE WHEN $10::text IS NULL THEN group_name WHEN $10::text = '' THEN NULL ELSE $10::text END
      WHERE id = $1
      RETURNING *`,
     [
       attributeId,
-      attr.name,
-      attr.data_type,
-      attr.default_value,
-      attr.min_value,
-      attr.max_value,
-      attr.options ? JSON.stringify(attr.options) : null,
-      attr.is_required,
-      attr.display_order,
-      attr.group_name,
+      fields.name,
+      fields.data_type,
+      fields.default_value,
+      fields.min_value,
+      fields.max_value,
+      fields.options ? JSON.stringify(fields.options) : null,
+      fields.is_required,
+      fields.display_order,
+      fields.group_name ?? null,
     ],
   );
   return result.rows[0] ?? null;
 }
 
-// Exclusão de um atributo específico do sistema
 export async function deleteAttributeById(id: string, kind: FieldKind = 'attribute'): Promise<boolean> {
   const result = await pool.query(`DELETE FROM ${TABLE[kind]} WHERE id = $1`, [id]);
   return (result.rowCount ?? 0) > 0;

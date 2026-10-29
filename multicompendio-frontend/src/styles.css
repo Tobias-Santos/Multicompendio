@@ -1388,3 +1388,110 @@ form select:disabled {
 .inventory-add-row button {
   margin: 0;
 }
+
+/* ------------------------------------------------------------
+   Edição completa de atributos e campos de item; campo de seção com lista
+   ------------------------------------------------------------ */
+.section-field {
+  display: flex;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.section-field input {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.section-field select {
+  flex: 0 1 9.5rem;
+  min-width: 0;
+}
+
+.attribute-edit-row > td {
+  padding: 0.4rem 0 0.9rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.attribute-edit-panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.7rem 0.9rem;
+  align-items: end;
+  padding: 0.8rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 5px solid var(--accent-text);
+  border-radius: 8px;
+}
+
+.attribute-edit-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.attribute-edit-panel label.checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.attribute-edit-panel label.checkbox input {
+  width: auto;
+}
+
+.attribute-edit-wide {
+  grid-column: 1 / -1;
+}
+
+.attribute-edit-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.attribute-edit-actions button {
+  margin: 0;
+}
+
+.attribute-edit-panel .error {
+  margin: 0;
+}
+
+/* o campo de seção (texto + lista) ocupa duas colunas do formulário de adicionar; em telas muito estreitas, uma só */
+.attribute-row .section-field {
+  grid-column: span 2;
+}
+
+@media (max-width: 380px) {
+  .attribute-row .section-field {
+    grid-column: auto;
+    flex-direction: column;
+  }
+}
+
+/* Texto com número: o número pequeno ao lado do nome e a área de texto embaixo */
+.field-textnumber {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-bottom: 0.85rem; /* mesmo respiro dos outros campos */
+}
+
+/* o rótulo fica igual ao dos demais campos (que são <label>) */
+.field-textnumber-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.field-number-small {
+  width: 4.5rem;
+  padding: 0.3rem 0.4rem;
+  text-align: center;
+}

@@ -100,6 +100,47 @@ export function validateValues(
         entries.push({ attributeId: attr.id, value: text });
         break;
       }
+      case 'text_number': {
+        if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+          throw new ValidationError(`O campo "${attr.name}" precisa ter um número e/ou um texto.`);
+        }
+        const part = raw as { number?: unknown; text?: unknown };
+        const rawText = part.text ?? '';
+        if (typeof rawText !== 'string') {
+          throw new ValidationError(`A parte de texto do campo "${attr.name}" precisa ser um texto.`);
+        }
+        const text = rawText.trim();
+        if (text.length > MAX_LONGTEXT_LENGTH) {
+          throw new ValidationError(
+            `A parte de texto do campo "${attr.name}" pode ter no máximo ${MAX_LONGTEXT_LENGTH} caracteres.`,
+          );
+        }
+        let number: number | null = null;
+        if (part.number !== undefined && part.number !== null && part.number !== '') {
+          if (typeof part.number !== 'number' || !Number.isFinite(part.number)) {
+            throw new ValidationError(`A parte numérica do campo "${attr.name}" precisa ser um número.`);
+          }
+          number = part.number;
+          const min = attr.min_value === null ? null : Number(attr.min_value);
+          const max = attr.max_value === null ? null : Number(attr.max_value);
+          if (min !== null && max !== null && (number < min || number > max)) {
+            throw new ValidationError(`A parte numérica do campo "${attr.name}" precisa estar entre ${min} e ${max}.`);
+          }
+          if (min !== null && number < min) {
+            throw new ValidationError(`A parte numérica do campo "${attr.name}" precisa ser no mínimo ${min}.`);
+          }
+          if (max !== null && number > max) {
+            throw new ValidationError(`A parte numérica do campo "${attr.name}" precisa ser no máximo ${max}.`);
+          }
+        }
+        // com as duas partes vazias, é como se o campo não tivesse sido preenchido
+        if (number === null && text === '') {
+          if (attr.is_required) throw new ValidationError(`O campo "${attr.name}" é obrigatório.`);
+          break;
+        }
+        entries.push({ attributeId: attr.id, value: { number, text } });
+        break;
+      }
       case 'boolean': {
         if (typeof raw !== 'boolean') {
           throw new ValidationError(`O campo "${attr.name}" precisa ser verdadeiro ou falso.`);

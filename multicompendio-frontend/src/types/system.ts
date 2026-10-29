@@ -1,5 +1,6 @@
 // 'longtext' = texto de várias linhas (histórias, anotações, listas de magias)
-export type AttributeDataType = 'number' | 'text' | 'longtext' | 'boolean' | 'select';
+// 'text_number' = número opcional (com mínimo e máximo) mais um texto de várias linhas (ex.: uma disciplina com seus pontos)
+export type AttributeDataType = 'number' | 'text' | 'longtext' | 'boolean' | 'select' | 'text_number';
 
 export interface RpgSystem {
   id: string;
@@ -41,8 +42,8 @@ export interface AttributeInput {
   group_name?: string; // seção (opcional); texto vazio remove o atributo da seção
   data_type: AttributeDataType;
   default_value?: string;
-  min_value?: number;
-  max_value?: number;
+  min_value?: number | null; // nulo, na edição, tira o limite
+  max_value?: number | null;
   options?: string[];
   is_required?: boolean;
   display_order?: number;

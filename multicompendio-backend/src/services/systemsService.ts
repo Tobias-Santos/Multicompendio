@@ -51,9 +51,9 @@ function validateAttributeShape(attr: AttributeInput | Partial<AttributeInput>):
     throw new ValidationError(`O atributo "${name}" é do tipo "Lista de opções" mas não tem opções definidas.`);
   }
   if (
-    attr.min_value !== undefined &&
-    attr.max_value !== undefined &&
-    attr.min_value > attr.max_value
+    attr.min_value != null &&
+    attr.max_value != null &&
+    Number(attr.min_value) > Number(attr.max_value)
   ) {
     throw new ValidationError(`O atributo "${name}" tem o valor mínimo maior que o valor máximo.`);
   }
@@ -183,6 +183,8 @@ const FIELD_KIND = {
     pending: 'fichas',
     countRecords: (systemId: string) => charactersRepo.countBySystem(systemId),
     countValues: (id: string) => charactersRepo.countValuesByAttribute(id),
+    countOutOfRange: (id: string, min: number | null, max: number | null) => charactersRepo.countValuesOutOfRange(id, min, max),
+    countNotInOptions: (id: string, options: string[]) => charactersRepo.countValuesNotInOptions(id, options),
   },
   item_field: {
     noun: 'campo',
@@ -193,6 +195,8 @@ const FIELD_KIND = {
     pending: 'itens',
     countRecords: (systemId: string) => itemsRepo.countBySystem(systemId),
     countValues: (id: string) => itemsRepo.countValuesByField(id),
+    countOutOfRange: (id: string, min: number | null, max: number | null) => itemsRepo.countValuesOutOfRange(id, min, max),
+    countNotInOptions: (id: string, options: string[]) => itemsRepo.countValuesNotInOptions(id, options),
   },
 };
 
@@ -275,52 +279,93 @@ export async function editAttribute(
   const current = await attributesRepo.findAttributeById(systemId, attributeId, kind);
   if (!current) throw new NotFoundError(`${w.Noun} não encontrado neste sistema.`);
 
-  if (changes.data_type && changes.data_type !== current.data_type) {
-    const inUse = await w.countValues(attributeId);
-    if (inUse > 0) {
-      throw new ConflictError(
-        `O tipo do ${w.noun} "${current.name}" não pode ser alterado porque ${countOf(inUse, w.uses[0], w.uses[1])} esse ${w.noun}.`,
-      );
-    }
+  const newType = changes.data_type ?? current.data_type;
+  const typeChanged = newType !== current.data_type;
+  const inUse = await w.countValues(attributeId);
+
+  if (typeChanged && inUse > 0) {
+    throw new ConflictError(
+      `O tipo do ${w.noun} "${current.name}" não pode ser alterado porque ${countOf(inUse, w.uses[0], w.uses[1])} esse ${w.noun}.`,
+    );
   }
 
+  let name = current.name;
   if (changes.name !== undefined) {
-    const newName = changes.name.trim();
-    if (!newName) throw new ValidationError(`Todo ${w.noun} precisa de um nome.`);
+    name = String(changes.name).trim();
+    if (!name) throw new ValidationError(`Todo ${w.noun} precisa de um nome.`);
     const siblings = await attributesRepo.listAttributesBySystem(systemId, kind);
-    if (siblings.some((a) => a.id !== attributeId && a.name.trim().toLowerCase() === newName.toLowerCase())) {
-      throw new ValidationError(`Já existe um ${w.noun} chamado "${newName}" neste sistema.`);
+    if (siblings.some((a) => a.id !== attributeId && a.name.trim().toLowerCase() === name.toLowerCase())) {
+      throw new ValidationError(`Já existe um ${w.noun} chamado "${name}" neste sistema.`);
     }
-    changes = { ...changes, name: newName };
-  }
-
-  if (changes.group_name !== undefined) {
-    changes = { ...changes, group_name: normalizeGroupName(changes.group_name) };
   }
 
   // Tornar obrigatório um campo existente só vale se tudo o que já existe o preenche.
-  if (changes.is_required === true && !current.is_required) {
+  const isRequired = changes.is_required ?? current.is_required;
+  if (isRequired && !current.is_required) {
     const total = await w.countRecords(systemId);
-    if (total > 0 && (await w.countValues(attributeId)) < total) {
+    if (total > 0 && inUse < total) {
       throw new ConflictError(
         `O ${w.noun} "${current.name}" não pode ser obrigatório porque há ${w.pending} que ainda não o preenchem.`,
       );
     }
   }
 
-  const merged: AttributeInput = {
-    name: changes.name ?? current.name,
-    data_type: changes.data_type ?? current.data_type,
-    default_value: changes.default_value ?? current.default_value ?? undefined,
-    min_value: changes.min_value ?? current.min_value ?? undefined,
-    max_value: changes.max_value ?? current.max_value ?? undefined,
-    options: changes.options ?? current.options ?? undefined,
-    is_required: changes.is_required ?? current.is_required,
-    display_order: changes.display_order ?? current.display_order,
+  // Faixa e opções só existem para o tipo que as usa. Em `changes`, nulo ou vazio tira o limite.
+  const has = (key: keyof AttributeInput) => Object.prototype.hasOwnProperty.call(changes, key);
+  const toNumber = (raw: unknown, label: string): number | null => {
+    if (raw === null || raw === undefined || raw === '') return null;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) throw new ValidationError(`O ${label} do ${w.noun} "${name}" precisa ser um número.`);
+    return n;
   };
-  validateAttributeShape(merged);
+  const hasRange = newType === 'number' || newType === 'text_number';
+  const min = !hasRange ? null : has('min_value') ? toNumber(changes.min_value, 'valor mínimo') : toNumber(current.min_value, 'valor mínimo');
+  const max = !hasRange ? null : has('max_value') ? toNumber(changes.max_value, 'valor máximo') : toNumber(current.max_value, 'valor máximo');
+  const options = newType !== 'select' ? null : (changes.options ?? current.options ?? null);
 
-  const updated = await attributesRepo.updateAttribute(attributeId, changes, kind);
+  validateAttributeShape({
+    name,
+    data_type: newType,
+    min_value: min ?? undefined,
+    max_value: max ?? undefined,
+    options: options ?? undefined,
+  });
+
+  // O que já foi preenchido não pode ficar inválido: a nova faixa e a nova lista têm de acomodar os valores existentes.
+  if (inUse > 0 && !typeChanged) {
+    if (hasRange) {
+      const outside = await w.countOutOfRange(attributeId, min, max);
+      if (outside > 0) {
+        throw new ConflictError(
+          `O ${w.noun} "${name}" não pode ter essa faixa porque ${countOf(outside, 'valor existente ficaria', 'valores existentes ficariam')} fora dela.`,
+        );
+      }
+    }
+    if (newType === 'select' && options) {
+      const outside = await w.countNotInOptions(attributeId, options);
+      if (outside > 0) {
+        throw new ConflictError(
+          `O ${w.noun} "${name}" não pode perder essas opções porque ${countOf(outside, 'valor existente usa', 'valores existentes usam')} opções que seriam removidas.`,
+        );
+      }
+    }
+  }
+
+  const updated = await attributesRepo.updateAttribute(
+    attributeId,
+    {
+      name,
+      data_type: newType,
+      default_value: changes.default_value ?? current.default_value ?? null,
+      min_value: min,
+      max_value: max,
+      options,
+      is_required: isRequired,
+      display_order: changes.display_order ?? current.display_order,
+      group_name: changes.group_name !== undefined ? normalizeGroupName(changes.group_name) ?? '' : undefined,
+    },
+    kind,
+  );
   if (!updated) throw new NotFoundError(`${w.Noun} não encontrado.`);
   return updated;
 }

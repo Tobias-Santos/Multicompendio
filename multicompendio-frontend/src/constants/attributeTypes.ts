@@ -9,9 +9,13 @@ export const ATTRIBUTE_TYPE_LABELS: Record<AttributeDataType, string> = {
   longtext: 'Texto longo',
   boolean: 'Verdadeiro ou falso',
   select: 'Lista de opções',
+  text_number: 'Texto com número',
 };
 
-export const ATTRIBUTE_TYPE_ORDER: AttributeDataType[] = ['number', 'text', 'longtext', 'boolean', 'select'];
+export const ATTRIBUTE_TYPE_ORDER: AttributeDataType[] = ['number', 'text', 'longtext', 'text_number', 'boolean', 'select'];
+
+// Tipos que têm uma parte numérica, com mínimo e máximo.
+export const hasNumberRange = (type: AttributeDataType) => type === 'number' || type === 'text_number';
 
 // Exemplo de nome de atributo coerente com cada tipo, usado no
 // placeholder do campo "Nome" ao adicionar um atributo.
@@ -21,6 +25,7 @@ export const ATTRIBUTE_NAME_EXAMPLES: Record<AttributeDataType, string> = {
   longtext: 'Biografia',
   boolean: 'Possui armadura',
   select: 'Classe',
+  text_number: 'Disciplina',
 };
 
 // Exemplos de nome para os campos dos itens (o que os itens de um sistema têm).
@@ -30,6 +35,7 @@ export const ITEM_FIELD_NAME_EXAMPLES: Record<AttributeDataType, string> = {
   longtext: 'Descrição',
   boolean: 'É mágico',
   select: 'Raridade',
+  text_number: 'Encantamento',
 };
 
 // Agrupa atributos por seção, na ordem em que cada seção aparece pela primeira vez.
