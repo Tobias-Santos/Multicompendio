@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as controller from '../controllers/systemsController';
 import * as charactersController from '../controllers/charactersController';
 import * as sharing from '../controllers/sharingController';
+import * as items from '../controllers/itemsController';
 
 const router = Router();
 
@@ -13,6 +14,13 @@ router.delete('/:id', controller.remove);
 router.post('/:id/attributes', controller.addAttribute);
 router.patch('/:id/attributes/:attributeId', controller.updateAttribute);
 router.delete('/:id/attributes/:attributeId', controller.removeAttribute);
+
+// Itens e seus campos (v1.5)
+router.post('/:id/item-fields', items.addField);
+router.patch('/:id/item-fields/:fieldId', items.updateField);
+router.delete('/:id/item-fields/:fieldId', items.removeField);
+router.get('/:id/items', items.list);
+router.post('/:id/items', items.create);
 
 // Compartilhamento (v1.4)
 router.get('/:id/sharing', sharing.getSharing);

@@ -4,10 +4,12 @@ import { CharacterDetail } from '../types/character';
 import { deleteCharacter, getCharacter, updateCharacter } from '../api/charactersApi';
 import { CharacterForm } from '../components/CharacterForm';
 import { VisibilityToggle } from '../components/VisibilityToggle';
+import { InventoryPanel } from '../components/InventoryPanel';
+import { setVisibility } from '../api/charactersApi';
 // o editor (ProseMirror) é pesado e só é preciso na aba da história: carrega sob demanda
 const StoryPanel = lazy(() => import('../components/StoryPanel').then((m) => ({ default: m.StoryPanel })));
 
-type Tab = 'ficha' | 'historia';
+type Tab = 'ficha' | 'historia' | 'itens';
 
 export function CharacterPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,19 +19,27 @@ export function CharacterPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   // A página tem duas abas. As duas ficam montadas (a oculta só some da tela), para trocar de aba
   // não perder o que está sendo editado; a história só é carregada na primeira vez que a aba é aberta.
-  const [tab, setTab] = useState<Tab>(() => (window.location.hash === '#historia' ? 'historia' : 'ficha'));
+  const [tab, setTab] = useState<Tab>(() =>
+    window.location.hash === '#historia' ? 'historia' : window.location.hash === '#itens' ? 'itens' : 'ficha',
+  );
   const [storyOpened, setStoryOpened] = useState(tab === 'historia');
+  const [itemsOpened, setItemsOpened] = useState(tab === 'itens');
 
   function selectTab(next: Tab) {
     setTab(next);
     if (next === 'historia') setStoryOpened(true);
     // guarda a aba na URL (#historia) sem criar um passo novo no histórico do navegador
-    window.history.replaceState(null, '', next === 'historia' ? '#historia' : window.location.pathname + window.location.search);
+    if (next === 'itens') setItemsOpened(true);
+    window.history.replaceState(
+      null,
+      '',
+      next === 'ficha' ? window.location.pathname + window.location.search : `#${next}`,
+    );
   }
 
   // setas esquerda/direita, Home e End trocam de aba (padrão de abas acessíveis)
   function onTabKeyDown(event: React.KeyboardEvent) {
-    const order: Tab[] = ['ficha', 'historia'];
+    const order: Tab[] = ['ficha', 'historia', 'itens'];
     const index = order.indexOf(tab);
     let next: Tab | null = null;
     if (event.key === 'ArrowRight') next = order[(index + 1) % order.length];
@@ -90,10 +100,10 @@ export function CharacterPage() {
 
       {canEdit ? (
         <VisibilityToggle
-          characterId={id}
+          noun="personagem"
           isPublic={data.character.is_public}
           isPreconfiguredSystem={data.character.system_is_preconfigured}
-          onChanged={setData}
+          onSet={async (next) => setData(await setVisibility(id, next))}
         />
       ) : (
         <p className="readonly-banner" role="note">
@@ -129,6 +139,19 @@ export function CharacterPage() {
         >
           História de origem
         </button>
+        <button
+          type="button"
+          role="tab"
+          id="aba-itens"
+          className="tab"
+          aria-selected={tab === 'itens'}
+          aria-controls="painel-itens"
+          tabIndex={tab === 'itens' ? 0 : -1}
+          title="Os itens e equipamentos que o personagem carrega."
+          onClick={() => selectTab('itens')}
+        >
+          Itens
+        </button>
       </div>
 
       <div role="tabpanel" id="painel-ficha" aria-labelledby="aba-ficha" hidden={tab !== 'ficha'}>
@@ -151,6 +174,10 @@ export function CharacterPage() {
             <StoryPanel characterId={id} readOnly={!canEdit} ownerName={data.character.owner_name} />
           </Suspense>
         )}
+      </div>
+
+      <div role="tabpanel" id="painel-itens" aria-labelledby="aba-itens" hidden={tab !== 'itens'}>
+        {itemsOpened && <InventoryPanel characterId={id} systemId={data.character.system_id} canEdit={canEdit} />}
       </div>
 
       {actionError && <p className="error">{actionError}</p>}

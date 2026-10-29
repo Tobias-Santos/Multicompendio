@@ -11,6 +11,7 @@ import {
   SystemView,
 } from '../types/system';
 import * as sharingRepo from '../repositories/sharingRepository';
+import * as itemsRepo from '../repositories/itemsRepository';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
 
 // ------------------------------------------------------------------
@@ -84,11 +85,14 @@ export async function registerSystem(input: CreateSystemInput, userId: string): 
 export async function getSystem(
   id: string,
   userId: string,
-): Promise<{ system: SystemView; attributes: SystemAttribute[] }> {
+): Promise<{ system: SystemView; attributes: SystemAttribute[]; item_fields: SystemAttribute[] }> {
   const system = await loadVisibleSystem(id, userId);
-  const attributes = await attributesRepo.listAttributesBySystem(id);
+  const [attributes, item_fields] = await Promise.all([
+    attributesRepo.listAttributesBySystem(id),
+    attributesRepo.listAttributesBySystem(id, 'item_field'),
+  ]);
   const isMember = system.owner_user_id !== userId && !system.is_preconfigured && (await sharingRepo.isMember(id, userId));
-  return { system: toView(system, userId, isMember), attributes };
+  return { system: toView(system, userId, isMember), attributes, item_fields };
 }
 
 export async function listAllSystems(userId: string): Promise<SystemView[]> {
@@ -130,12 +134,19 @@ export async function removeSystem(id: string, userId: string): Promise<void> {
     );
   }
 
+  const items = await itemsRepo.countBySystem(id);
+  if (items > 0) {
+    throw new ConflictError(
+      `Este sistema não pode ser excluído porque tem ${countOf(items, 'item', 'itens')}. Exclua os itens primeiro.`,
+    );
+  }
+
   try {
     await systemsRepo.deleteSystemById(id);
   } catch (err) {
     // segunda barreira: o banco também recusa se um personagem surgiu entre a checagem e a exclusão
     if ((err as { code?: string }).code === '23503') {
-      throw new ConflictError('Este sistema não pode ser excluído porque ainda tem personagens.');
+      throw new ConflictError('Este sistema não pode ser excluído porque ainda tem personagens ou itens.');
     }
     throw err;
   }
@@ -158,111 +169,141 @@ function normalizeGroupName(raw: string | undefined): string | undefined {
 //
 // A `key` (identificador técnico interno) é gerada aqui automaticamente
 // a partir do nome — o usuário só informa o nome, nunca a key.
+// Atributos de personagem e campos de item seguem as mesmas regras; o que muda é a tabela, a
+// contagem de uso e as palavras das mensagens.
+export type FieldKind = attributesRepo.FieldKind;
+
+const FIELD_KIND = {
+  attribute: {
+    noun: 'atributo',
+    Noun: 'Atributo',
+    plural: 'personagens',
+    existing: 'as fichas existentes',
+    uses: ['personagem usa', 'personagens usam'] as const,
+    pending: 'fichas',
+    countRecords: (systemId: string) => charactersRepo.countBySystem(systemId),
+    countValues: (id: string) => charactersRepo.countValuesByAttribute(id),
+  },
+  item_field: {
+    noun: 'campo',
+    Noun: 'Campo',
+    plural: 'itens',
+    existing: 'os itens existentes',
+    uses: ['item usa', 'itens usam'] as const,
+    pending: 'itens',
+    countRecords: (systemId: string) => itemsRepo.countBySystem(systemId),
+    countValues: (id: string) => itemsRepo.countValuesByField(id),
+  },
+};
+
+// RF02 + RF03 (atributos de personagem) e RF12 (campos de item): adiciona ao sistema
 export async function addAttribute(
   systemId: string,
   attr: AttributeInput,
   userId: string,
+  kind: FieldKind = 'attribute',
 ): Promise<SystemAttribute> {
+  const w = FIELD_KIND[kind];
   await loadEditableSystem(systemId, userId);
 
   if (!attr.name || !attr.name.trim()) {
-    throw new ValidationError('Todo atributo precisa de um nome.');
+    throw new ValidationError(`Todo ${w.noun} precisa de um nome.`);
   }
   validateAttributeShape(attr);
 
-  // Um atributo obrigatório novo deixaria sem o campo as fichas que já existem (inclusive as de
-  // outras pessoas, quando o sistema é compartilhado), então só entra enquanto não há personagens.
-  if (attr.is_required && (await charactersRepo.countBySystem(systemId)) > 0) {
+  // Um campo obrigatório novo deixaria sem ele o que já existe (inclusive de outras pessoas, quando
+  // o sistema é compartilhado), então só entra enquanto não há personagens ou itens.
+  if (attr.is_required && (await w.countRecords(systemId)) > 0) {
     throw new ConflictError(
-      'Este sistema já tem personagens, então não dá para criar um atributo obrigatório: as fichas existentes ficariam sem esse campo. Crie o atributo como opcional.',
+      `Este sistema já tem ${w.plural}, então não dá para criar um ${w.noun} obrigatório: ${w.existing} ficariam sem esse campo. Crie o ${w.noun} como opcional.`,
     );
   }
 
-  const existingAttrs = await attributesRepo.listAttributesBySystem(systemId);
+  const existing = await attributesRepo.listAttributesBySystem(systemId, kind);
   const normalizedName = attr.name.trim().toLowerCase();
-  if (existingAttrs.some((a) => a.name.trim().toLowerCase() === normalizedName)) {
-    throw new ValidationError(`Já existe um atributo chamado "${attr.name}" neste sistema.`);
+  if (existing.some((a) => a.name.trim().toLowerCase() === normalizedName)) {
+    throw new ValidationError(`Já existe um ${w.noun} chamado "${attr.name}" neste sistema.`);
   }
 
-  const key = uniqueSlug(attr.name, existingAttrs.map((a) => a.key));
+  const key = uniqueSlug(attr.name, existing.map((a) => a.key));
 
-  return attributesRepo.insertAttribute(systemId, key, {
-    ...attr,
-    name: attr.name.trim(),
-    group_name: normalizeGroupName(attr.group_name),
-  });
+  return attributesRepo.insertAttribute(
+    systemId,
+    key,
+    { ...attr, name: attr.name.trim(), group_name: normalizeGroupName(attr.group_name) },
+    kind,
+  );
 }
 
-// Exclusão de um atributo específico do sistema
 export async function removeAttribute(
   systemId: string,
   attributeId: string,
   userId: string,
+  kind: FieldKind = 'attribute',
 ): Promise<void> {
+  const w = FIELD_KIND[kind];
   await loadEditableSystem(systemId, userId);
-  const current = await attributesRepo.findAttributeById(systemId, attributeId);
-  if (!current) throw new NotFoundError('Atributo não encontrado neste sistema.');
+  const current = await attributesRepo.findAttributeById(systemId, attributeId, kind);
+  if (!current) throw new NotFoundError(`${w.Noun} não encontrado neste sistema.`);
 
-  const inUse = await charactersRepo.countValuesByAttribute(attributeId);
+  const inUse = await w.countValues(attributeId);
   if (inUse > 0) {
     throw new ConflictError(
-      `O atributo "${current.name}" não pode ser excluído porque ${countOf(inUse, 'personagem usa', 'personagens usam')} esse atributo.`,
+      `O ${w.noun} "${current.name}" não pode ser excluído porque ${countOf(inUse, w.uses[0], w.uses[1])} esse ${w.noun}.`,
     );
   }
 
   try {
-    await attributesRepo.deleteAttributeById(attributeId);
+    await attributesRepo.deleteAttributeById(attributeId, kind);
   } catch (err) {
     if ((err as { code?: string }).code === '23503') {
-      throw new ConflictError(`O atributo "${current.name}" não pode ser excluído porque está em uso.`);
+      throw new ConflictError(`O ${w.noun} "${current.name}" não pode ser excluído porque está em uso.`);
     }
     throw err;
   }
 }
 
-// RF05 — edição de um atributo específico do sistema
 export async function editAttribute(
   systemId: string,
   attributeId: string,
   changes: Partial<AttributeInput>,
   userId: string,
+  kind: FieldKind = 'attribute',
 ): Promise<SystemAttribute> {
+  const w = FIELD_KIND[kind];
   await loadEditableSystem(systemId, userId);
-  const current = await attributesRepo.findAttributeById(systemId, attributeId);
-  if (!current) throw new NotFoundError('Atributo não encontrado neste sistema.');
+  const current = await attributesRepo.findAttributeById(systemId, attributeId, kind);
+  if (!current) throw new NotFoundError(`${w.Noun} não encontrado neste sistema.`);
 
-  // Mudar o tipo de um atributo que já tem valores guardados invalidaria esses valores.
   if (changes.data_type && changes.data_type !== current.data_type) {
-    const inUse = await charactersRepo.countValuesByAttribute(attributeId);
+    const inUse = await w.countValues(attributeId);
     if (inUse > 0) {
       throw new ConflictError(
-        `O tipo do atributo "${current.name}" não pode ser alterado porque ${countOf(inUse, 'personagem usa', 'personagens usam')} esse atributo.`,
+        `O tipo do ${w.noun} "${current.name}" não pode ser alterado porque ${countOf(inUse, w.uses[0], w.uses[1])} esse ${w.noun}.`,
       );
     }
   }
 
-  // Renomear não pode gerar dois atributos com o mesmo nome no sistema.
   if (changes.name !== undefined) {
     const newName = changes.name.trim();
-    if (!newName) throw new ValidationError('Todo atributo precisa de um nome.');
-    const siblings = await attributesRepo.listAttributesBySystem(systemId);
+    if (!newName) throw new ValidationError(`Todo ${w.noun} precisa de um nome.`);
+    const siblings = await attributesRepo.listAttributesBySystem(systemId, kind);
     if (siblings.some((a) => a.id !== attributeId && a.name.trim().toLowerCase() === newName.toLowerCase())) {
-      throw new ValidationError(`Já existe um atributo chamado "${newName}" neste sistema.`);
+      throw new ValidationError(`Já existe um ${w.noun} chamado "${newName}" neste sistema.`);
     }
     changes = { ...changes, name: newName };
   }
 
-  // Seção: texto vazio tira o atributo da seção (o repositório trata '' como remover).
   if (changes.group_name !== undefined) {
     changes = { ...changes, group_name: normalizeGroupName(changes.group_name) };
   }
 
-  // Tornar obrigatório um atributo existente só vale se todas as fichas já têm valor nele.
+  // Tornar obrigatório um campo existente só vale se tudo o que já existe o preenche.
   if (changes.is_required === true && !current.is_required) {
-    const total = await charactersRepo.countBySystem(systemId);
-    if (total > 0 && (await charactersRepo.countValuesByAttribute(attributeId)) < total) {
+    const total = await w.countRecords(systemId);
+    if (total > 0 && (await w.countValues(attributeId)) < total) {
       throw new ConflictError(
-        `O atributo "${current.name}" não pode ser obrigatório porque há fichas que ainda não o preenchem.`,
+        `O ${w.noun} "${current.name}" não pode ser obrigatório porque há ${w.pending} que ainda não o preenchem.`,
       );
     }
   }
@@ -279,7 +320,7 @@ export async function editAttribute(
   };
   validateAttributeShape(merged);
 
-  const updated = await attributesRepo.updateAttribute(attributeId, changes);
-  if (!updated) throw new NotFoundError('Atributo não encontrado.');
+  const updated = await attributesRepo.updateAttribute(attributeId, changes, kind);
+  if (!updated) throw new NotFoundError(`${w.Noun} não encontrado.`);
   return updated;
 }

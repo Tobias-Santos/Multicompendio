@@ -8,6 +8,7 @@ interface Props {
   attributes: SystemAttribute[];
   initialName?: string;
   initialValues?: CharacterValues;
+  subject?: 'personagem' | 'item'; // o mesmo formulário serve aos itens
   readOnly?: boolean; // personagem público de outra pessoa: mostra a ficha sem permitir editar
   submitLabel: string;
   submittingLabel: string;
@@ -30,7 +31,7 @@ function buildInitialState(attributes: SystemAttribute[], values?: CharacterValu
 }
 
 // Texto do balão informativo de cada campo, de acordo com o tipo do atributo.
-function hintFor(attr: SystemAttribute): string {
+function hintFor(attr: SystemAttribute, subject: string): string {
   const min = attr.min_value === null ? null : Number(attr.min_value);
   const max = attr.max_value === null ? null : Number(attr.max_value);
 
@@ -43,7 +44,7 @@ function hintFor(attr: SystemAttribute): string {
       else hint = 'Informe um número.';
       break;
     case 'boolean':
-      hint = `Marque se "${attr.name}" vale para este personagem.`;
+      hint = `Marque se "${attr.name}" vale para este ${subject}.`;
       break;
     case 'select':
       hint = `Escolha uma das opções para "${attr.name}".`;
@@ -65,6 +66,7 @@ export function CharacterForm({
   initialName = '',
   initialValues,
   readOnly = false,
+  subject = 'personagem',
   submitLabel,
   submittingLabel,
   onSubmit,
@@ -116,7 +118,7 @@ export function CharacterForm({
       await onSubmit({ name, values });
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível salvar o personagem.');
+      setError(err instanceof Error ? err.message : `Não foi possível salvar o ${subject}.`);
     } finally {
       setSubmitting(false);
     }
@@ -129,7 +131,7 @@ export function CharacterForm({
 
     return (
       <label key={attr.id} className={wide}>
-        <InfoLabel text={label} info={hintFor(attr)} />
+        <InfoLabel text={label} info={hintFor(attr, subject)} />
 
         {attr.data_type === 'number' && (
           <input
@@ -197,7 +199,7 @@ export function CharacterForm({
   return (
     <form onSubmit={handleSubmit} className="card" noValidate>
       <label>
-        <InfoLabel text="Nome *" info="Nome do personagem. Preenchimento obrigatório." />
+        <InfoLabel text="Nome *" info={`Nome do ${subject}. Preenchimento obrigatório.`} />
         <input
           value={name}
           maxLength={120}

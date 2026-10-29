@@ -4,6 +4,7 @@ import authRouter from './routes/auth';
 import systemsRouter from './routes/systems';
 import charactersRouter from './routes/characters';
 import invitesRouter from './routes/invites';
+import itemsRouter from './routes/items';
 import { requireAuth } from './middleware/auth';
 
 export const app = express();
@@ -16,6 +17,7 @@ app.use('/auth', authRouter);
 app.use('/systems', requireAuth, systemsRouter); // só quem entrou acessa os sistemas
 app.use('/characters', requireAuth, charactersRouter);
 app.use('/invites', requireAuth, invitesRouter);
+app.use('/items', requireAuth, itemsRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Rota não encontrada.' });

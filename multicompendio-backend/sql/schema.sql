@@ -217,3 +217,71 @@ CREATE TABLE system_invites (
     token       VARCHAR(64) NOT NULL UNIQUE,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- >>> ITENS (v1.5)
+-- ------------------------------------------------------------
+-- v1.5 — Itens e equipamentos (RF11, RF12)
+-- ------------------------------------------------------------
+-- Campos que os itens de um sistema têm (ex.: dano, peso). Mesmo formato dos atributos de
+-- personagem; definidos pelo dono do sistema e usados como campos do bloco de estatísticas.
+CREATE TABLE system_item_fields (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    system_id       UUID NOT NULL REFERENCES rpg_systems(id) ON DELETE CASCADE,
+    key             VARCHAR(60) NOT NULL,
+    name            VARCHAR(120) NOT NULL,
+    group_name      VARCHAR(80),
+    data_type       attribute_data_type NOT NULL,
+    default_value   TEXT,
+    min_value       NUMERIC,
+    max_value       NUMERIC,
+    options         JSONB,
+    is_required     BOOLEAN NOT NULL DEFAULT FALSE,
+    display_order   INTEGER NOT NULL DEFAULT 0,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT system_item_fields_key_unique UNIQUE (system_id, key),
+    CONSTRAINT system_item_fields_minmax_check
+        CHECK (min_value IS NULL OR max_value IS NULL OR min_value <= max_value)
+);
+
+CREATE TRIGGER trg_system_item_fields_updated_at
+BEFORE UPDATE ON system_item_fields
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- Itens. owner_user_id nulo = item que já vem com o sistema pré-instalado (só leitura, de todos).
+-- Privado por padrão; público só nos sistemas de pessoas (nos pré-instalados, só os que já vêm prontos).
+CREATE TABLE items (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    system_id       UUID NOT NULL REFERENCES rpg_systems(id) ON DELETE RESTRICT,
+    owner_user_id   UUID REFERENCES users(id) ON DELETE CASCADE,
+    name            VARCHAR(120) NOT NULL,
+    is_public       BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT items_preinstalled_public CHECK (owner_user_id IS NOT NULL OR is_public)
+);
+CREATE INDEX idx_items_system_owner ON items(system_id, owner_user_id);
+
+CREATE TRIGGER trg_items_updated_at
+BEFORE UPDATE ON items
+FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE item_values (
+    item_id         UUID NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+    field_id        UUID NOT NULL REFERENCES system_item_fields(id) ON DELETE RESTRICT,
+    value           JSONB NOT NULL,
+    PRIMARY KEY (item_id, field_id)
+);
+CREATE INDEX idx_item_values_field ON item_values(field_id);
+
+-- Inventário: quais itens cada personagem carrega e em que quantidade.
+-- Um item que está em algum inventário não pode ser excluído (RESTRICT).
+CREATE TABLE character_items (
+    character_id    UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    item_id         UUID NOT NULL REFERENCES items(id) ON DELETE RESTRICT,
+    quantity        INTEGER NOT NULL DEFAULT 1 CHECK (quantity BETWEEN 1 AND 9999),
+    added_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (character_id, item_id)
+);
+CREATE INDEX idx_character_items_item ON character_items(item_id);
+-- <<< ITENS (v1.5)

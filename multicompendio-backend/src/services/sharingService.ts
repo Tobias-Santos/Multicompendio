@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto';
 import * as systemsRepo from '../repositories/systemsRepository';
 import * as sharingRepo from '../repositories/sharingRepository';
 import { ConflictError, ForbiddenError, NotFoundError } from '../errors';
+import * as itemsRepo from '../repositories/itemsRepository';
 import { loadVisibleSystem } from './systemsService';
 
 // Compartilhamento de sistemas (v1.4).
@@ -87,6 +88,12 @@ export async function leaveSystem(systemId: string, userId: string): Promise<voi
   if (characters > 0) {
     throw new ConflictError(
       `Você não pode sair enquanto tiver ${characters === 1 ? '1 personagem' : `${characters} personagens`} neste sistema. Exclua-${characters === 1 ? 'o' : 'os'} antes.`,
+    );
+  }
+  const items = await itemsRepo.countByOwnerInSystem(systemId, userId);
+  if (items > 0) {
+    throw new ConflictError(
+      `Você não pode sair enquanto tiver ${items === 1 ? '1 item' : `${items} itens`} neste sistema. Exclua-${items === 1 ? 'o' : 'os'} antes.`,
     );
   }
   await sharingRepo.removeMember(systemId, userId);

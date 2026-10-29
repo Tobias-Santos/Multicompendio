@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SystemAttribute } from '../types/system';
-import { updateAttribute, deleteAttribute } from '../api/systemsApi';
+import { updateAttribute, deleteAttribute, FieldKind } from '../api/systemsApi';
 import {
   ATTRIBUTE_TYPE_LABELS,
   ATTRIBUTE_TYPE_ORDER,
@@ -13,12 +13,14 @@ interface Props {
   onChanged: (updated: SystemAttribute) => void;
   onDeleted: (attributeId: string) => void;
   readOnly?: boolean; // sistemas só para consulta: sem editar nem excluir
+  kind?: FieldKind; // 'item_field': os campos dos itens (sem seções)
 }
 
 // Acima disso, as seções começam recolhidas (só a primeira fica aberta).
 const MANY_ATTRIBUTES = 30;
 
-export function AttributesTable({ systemId, attributes, onChanged, onDeleted, readOnly = false }: Props) {
+export function AttributesTable({ systemId, attributes, onChanged, onDeleted, readOnly = false, kind = 'attribute' }: Props) {
+  const word = kind === 'item_field' ? 'campo' : 'atributo';
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState('');
   const [draftSection, setDraftSection] = useState('');
@@ -27,10 +29,7 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted, re
   async function saveEdit(attr: SystemAttribute) {
     try {
       // seção vazia tira o atributo da seção
-      const updated = await updateAttribute(systemId, attr.id, {
-        name: draftName,
-        group_name: draftSection,
-      });
+      const updated = await updateAttribute(systemId, attr.id, { name: draftName, group_name: draftSection }, kind);
       onChanged(updated);
       setEditingId(null);
       setError(null);
@@ -40,9 +39,9 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted, re
   }
 
   async function handleDelete(attr: SystemAttribute) {
-    if (!confirm(`Excluir o atributo "${attr.name}"?`)) return;
+    if (!confirm(`Excluir o ${word} "${attr.name}"?`)) return;
     try {
-      await deleteAttribute(systemId, attr.id);
+      await deleteAttribute(systemId, attr.id, kind);
       onDeleted(attr.id);
       setError(null);
     } catch (err) {
@@ -51,7 +50,7 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted, re
   }
 
   if (attributes.length === 0) {
-    return <p className="muted">Nenhum atributo configurado ainda.</p>;
+    return <p className="muted">Nenhum {word} configurado ainda.</p>;
   }
 
   const existingSections = Array.from(
@@ -95,14 +94,16 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted, re
                           title="Nome do atributo, como ele aparecerá na ficha."
                           onChange={(e) => setDraftName(e.target.value)}
                         />
-                        <input
-                          list="secoes-existentes"
-                          placeholder="Seção"
-                          maxLength={80}
-                          value={draftSection}
-                          title="Seção da ficha em que o atributo aparece. Deixe em branco para não agrupar."
-                          onChange={(e) => setDraftSection(e.target.value)}
-                        />
+                        {kind === 'attribute' && (
+                          <input
+                            list="secoes-existentes"
+                            placeholder="Seção"
+                            maxLength={80}
+                            value={draftSection}
+                            title="Seção da ficha em que o atributo aparece. Deixe em branco para não agrupar."
+                            onChange={(e) => setDraftSection(e.target.value)}
+                          />
+                        )}
                       </div>
                     ) : (
                       attr.name

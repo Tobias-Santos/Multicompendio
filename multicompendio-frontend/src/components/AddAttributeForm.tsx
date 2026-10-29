@@ -1,7 +1,12 @@
 import { useState } from 'react';
 import { AttributeDataType, AttributeInput } from '../types/system';
-import { addAttribute } from '../api/systemsApi';
-import { ATTRIBUTE_NAME_EXAMPLES, ATTRIBUTE_TYPE_LABELS, ATTRIBUTE_TYPE_ORDER } from '../constants/attributeTypes';
+import { addAttribute, FieldKind } from '../api/systemsApi';
+import {
+  ATTRIBUTE_NAME_EXAMPLES,
+  ATTRIBUTE_TYPE_LABELS,
+  ATTRIBUTE_TYPE_ORDER,
+  ITEM_FIELD_NAME_EXAMPLES,
+} from '../constants/attributeTypes';
 
 const empty: AttributeInput = { name: '', data_type: 'number' };
 
@@ -9,9 +14,11 @@ interface Props {
   systemId: string;
   onAdded: () => void;
   sections?: string[]; // seções que o sistema já tem, sugeridas ao digitar
+  kind?: FieldKind; // 'item_field': campos dos itens (sem seções)
 }
 
-export function AddAttributeForm({ systemId, onAdded, sections = [] }: Props) {
+export function AddAttributeForm({ systemId, onAdded, sections = [], kind = 'attribute' }: Props) {
+  const isItem = kind === 'item_field';
   const [attr, setAttr] = useState<AttributeInput>({ ...empty });
   const [optionsText, setOptionsText] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +39,7 @@ export function AddAttributeForm({ systemId, onAdded, sections = [] }: Props) {
           attr.data_type === 'select'
             ? optionsText.split(',').map((s) => s.trim()).filter(Boolean)
             : undefined,
-      });
+      }, kind);
       // mantém a seção: facilita cadastrar vários atributos seguidos no mesmo grupo
       setAttr({ ...empty, group_name: attr.group_name });
       setOptionsText('');
@@ -47,25 +54,29 @@ export function AddAttributeForm({ systemId, onAdded, sections = [] }: Props) {
   return (
     <form onSubmit={handleSubmit} className="attribute-row">
       <input
-        placeholder={`Nome (ex: ${ATTRIBUTE_NAME_EXAMPLES[attr.data_type]})`}
-        title="Nome do atributo, como ele aparecerá na ficha."
+        placeholder={`Nome (ex: ${(isItem ? ITEM_FIELD_NAME_EXAMPLES : ATTRIBUTE_NAME_EXAMPLES)[attr.data_type]})`}
+        title={isItem ? 'Nome do campo, como ele aparecerá no item.' : 'Nome do atributo, como ele aparecerá na ficha.'}
         value={attr.name}
         onChange={(e) => update({ name: e.target.value })}
         required
       />
-      <input
-        list="secoes-do-sistema"
-        placeholder="Seção (ex: Combate)"
-        title="Agrupa atributos parecidos na ficha, como Combate ou Magias. Deixe em branco para não agrupar."
-        maxLength={80}
-        value={attr.group_name ?? ''}
-        onChange={(e) => update({ group_name: e.target.value })}
-      />
-      <datalist id="secoes-do-sistema">
-        {sections.map((section) => (
-          <option key={section} value={section} />
-        ))}
-      </datalist>
+      {!isItem && (
+        <>
+        <input
+          list="secoes-do-sistema"
+          placeholder="Seção (ex: Combate)"
+          title="Agrupa atributos parecidos na ficha, como Combate ou Magias. Deixe em branco para não agrupar."
+          maxLength={80}
+          value={attr.group_name ?? ''}
+          onChange={(e) => update({ group_name: e.target.value })}
+        />
+        <datalist id="secoes-do-sistema">
+          {sections.map((section) => (
+            <option key={section} value={section} />
+          ))}
+        </datalist>
+        </>
+      )}
       <select
         value={attr.data_type}
         title="Tipo de valor que este atributo vai guardar."
@@ -114,7 +125,7 @@ export function AddAttributeForm({ systemId, onAdded, sections = [] }: Props) {
       </label>
 
       <button type="submit" disabled={submitting}>
-        {submitting ? 'Adicionando...' : '+ adicionar atributo'}
+        {submitting ? 'Adicionando...' : isItem ? '+ adicionar campo' : '+ adicionar atributo'}
       </button>
 
       {error && <p className="error">{error}</p>}

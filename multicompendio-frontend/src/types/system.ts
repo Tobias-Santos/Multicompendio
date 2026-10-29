@@ -74,6 +74,7 @@ export interface UpdateSystemInput {
 export interface SystemWithAttributes {
   system: RpgSystem;
   attributes: SystemAttribute[];
+  item_fields: SystemAttribute[]; // campos que os itens deste sistema têm
 }
 
 export interface ApiError {

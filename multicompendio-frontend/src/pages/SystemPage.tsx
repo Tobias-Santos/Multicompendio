@@ -11,6 +11,9 @@ import { AttributesTable } from '../components/AttributesTable';
 import { AddAttributeForm } from '../components/AddAttributeForm';
 import { SystemSummary } from '../components/SystemSummary';
 import { CharacterList } from '../components/CharacterList';
+import { ItemList } from '../components/ItemList';
+import { deleteItem, listItems } from '../api/itemsApi';
+import { ItemSummary, ItemList as ItemListData } from '../types/item';
 
 export function SystemPage() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +22,7 @@ export function SystemPage() {
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [characters, setCharacters] = useState<CharacterSummary[]>([]);
+  const [itemList, setItemList] = useState<ItemListData>({ fields: [], items: [] });
 
   function reload() {
     if (!id) return;
@@ -37,6 +41,26 @@ export function SystemPage() {
   }
 
   useEffect(reloadCharacters, [id]);
+
+  function reloadItems() {
+    if (!id) return;
+    listItems(id)
+      .then(setItemList)
+      .catch((err) => setActionError(err instanceof Error ? err.message : 'Erro ao carregar os itens'));
+  }
+
+  useEffect(reloadItems, [id]);
+
+  async function handleDeleteItem(item: ItemSummary) {
+    if (!confirm(`Excluir o item "${item.name}"?`)) return;
+    setActionError(null);
+    try {
+      await deleteItem(item.id);
+      reloadItems();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Não foi possível excluir o item.');
+    }
+  }
 
   async function handleDeleteCharacter(character: CharacterSummary) {
     if (!confirm(`Excluir o personagem "${character.name}"?`)) return;
@@ -172,6 +196,37 @@ export function SystemPage() {
               </>
             )}
           </div>
+
+          <div className="card">
+            <h2>Campos dos itens</h2>
+            <p className="muted">
+              Definem o que cada item deste sistema tem (por exemplo, dano e peso) e formam o bloco de estatísticas do item.
+            </p>
+            <AttributesTable
+              kind="item_field"
+              systemId={id}
+              attributes={data.item_fields}
+              readOnly={!canEdit}
+              onChanged={(updated) =>
+                setData((prev) =>
+                  prev
+                    ? { ...prev, item_fields: prev.item_fields.map((f) => (f.id === updated.id ? updated : f)) }
+                    : prev,
+                )
+              }
+              onDeleted={(fieldId) =>
+                setData((prev) =>
+                  prev ? { ...prev, item_fields: prev.item_fields.filter((f) => f.id !== fieldId) } : prev,
+                )
+              }
+            />
+            {canEdit && (
+              <>
+                <h3>Adicionar campo</h3>
+                <AddAttributeForm kind="item_field" systemId={id} onAdded={reload} />
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -191,6 +246,32 @@ export function SystemPage() {
           onDelete={handleDeleteCharacter}
           showVisibility={!data.system.is_preconfigured}
         />
+      </section>
+
+      <section className="card items-card" aria-labelledby="titulo-itens">
+        <div className="card-header">
+          <h2 id="titulo-itens">Itens</h2>
+          <Link
+            to={`/sistemas/${id}/itens/novo`}
+            className="button-link"
+            title="Cria um item (arma, armadura, objeto…) usando os campos de item deste sistema."
+          >
+            Novo item
+          </Link>
+        </div>
+        <h3>Meus itens</h3>
+        <ItemList
+          items={itemList.items.filter((i) => i.is_mine)}
+          fields={itemList.fields}
+          onDelete={handleDeleteItem}
+          emptyMessage="Você ainda não criou nenhum item neste sistema."
+        />
+        {itemList.items.some((i) => !i.is_mine) && (
+          <>
+            <h3>{data.system.is_preconfigured ? 'Itens do sistema' : 'Itens do sistema e públicos'}</h3>
+            <ItemList items={itemList.items.filter((i) => !i.is_mine)} fields={itemList.fields} showOwner />
+          </>
+        )}
       </section>
 
       {characters.some((c) => !c.is_mine) && (

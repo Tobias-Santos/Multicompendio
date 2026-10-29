@@ -7,6 +7,8 @@ import { RegisterPage } from './pages/RegisterPage';
 import { CharacterCreatePage } from './pages/CharacterCreatePage';
 import { CharacterPage } from './pages/CharacterPage';
 import { InvitePage } from './pages/InvitePage';
+import { ItemPage } from './pages/ItemPage';
+import { ItemCreatePage } from './pages/ItemCreatePage';
 import { ThemeToggle } from './theme/ThemeToggle';
 import './styles.css';
 
@@ -24,6 +26,8 @@ export default function App() {
           <Route path="/sistemas/:id/personagens/novo" element={<CharacterCreatePage />} />
           <Route path="/personagens/:id" element={<CharacterPage />} />
           <Route path="/convite/:token" element={<InvitePage />} />
+          <Route path="/sistemas/:id/itens/novo" element={<ItemCreatePage />} />
+          <Route path="/itens/:id" element={<ItemPage />} />
         </Route>
       </Routes>
 

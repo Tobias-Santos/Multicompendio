@@ -1,9 +1,11 @@
 import { pool } from '../db/pool';
 import * as attributesRepo from '../repositories/attributesRepository';
+import * as itemsRepo from '../repositories/itemsRepository';
 import { createCharacter, removeCharacter } from './charactersService';
 import { saveStory } from './storiesService';
 import {
   EXAMPLE_CHARACTER_NAME,
+  EXAMPLE_INVENTORY,
   EXAMPLE_STORY,
   EXAMPLE_SYSTEM_NAME_PREFIX,
   exampleValues,
@@ -49,6 +51,17 @@ export async function createExampleCharacter(userId: string): Promise<string | n
   } catch (err) {
     await removeCharacter(characterId, userId); // não deixa um personagem sem a história pela metade
     throw err;
+  }
+
+  // o inventário usa os itens pré-instalados; sem eles (banco sem a migração dos itens), segue sem inventário
+  const preinstalled = await pool.query<{ id: string; name: string }>(
+    `SELECT id, name FROM items WHERE system_id = $1 AND owner_user_id IS NULL`,
+    [systemId],
+  );
+  const idByName = new Map(preinstalled.rows.map((r) => [r.name, r.id]));
+  for (const [name, quantity] of EXAMPLE_INVENTORY) {
+    const itemId = idByName.get(name);
+    if (itemId) await itemsRepo.upsertInventory(characterId, itemId, quantity);
   }
   return characterId;
 }

@@ -1,25 +1,25 @@
 import { useState } from 'react';
-import { setVisibility } from '../api/charactersApi';
-import { CharacterDetail } from '../types/character';
 
 interface Props {
-  characterId: string;
+  noun: 'personagem' | 'item';
   isPublic: boolean;
   isPreconfiguredSystem: boolean;
-  onChanged: (detail: CharacterDetail) => void;
+  onSet: (isPublic: boolean) => Promise<void>; // quem usa grava e atualiza a tela
 }
 
-// Interruptor do dono do personagem: público (as outras pessoas do sistema leem a ficha e a história,
-// sem editar) ou privado. No sistema pré-instalado, que é de todos, o personagem é sempre privado.
-export function VisibilityToggle({ characterId, isPublic, isPreconfiguredSystem, onChanged }: Props) {
+// Interruptor do dono: público (as outras pessoas do sistema leem, sem editar) ou privado.
+// No sistema pré-instalado, que é de todos, o que a pessoa cria é sempre privado.
+export function VisibilityToggle({ noun, isPublic, isPreconfiguredSystem, onSet }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const read = noun === 'personagem' ? 'a ficha e a história' : 'o item e os seus campos';
 
   if (isPreconfiguredSystem) {
     return (
       <p className="muted visibility-note">
-        Os personagens do sistema pré-instalado são sempre privados, porque esse sistema é de todos. Para compartilhar
-        fichas, crie um sistema seu ou entre no de outra pessoa.
+        {noun === 'personagem'
+          ? 'Os personagens do sistema pré-instalado são sempre privados, porque esse sistema é de todos. Para compartilhar fichas, crie um sistema seu ou entre no de outra pessoa.'
+          : 'Os itens que você cria no sistema pré-instalado são sempre privados, porque esse sistema é de todos. Para compartilhar itens, crie um sistema seu ou entre no de outra pessoa.'}
       </p>
     );
   }
@@ -28,7 +28,7 @@ export function VisibilityToggle({ characterId, isPublic, isPreconfiguredSystem,
     setBusy(true);
     setError(null);
     try {
-      onChanged(await setVisibility(characterId, next));
+      await onSet(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível mudar a visibilidade.');
     } finally {
@@ -38,14 +38,14 @@ export function VisibilityToggle({ characterId, isPublic, isPreconfiguredSystem,
 
   return (
     <div className="visibility">
-      <label className="visibility-label" title="Público: quem participa deste sistema pode ler a ficha e a história, mas não editar.">
+      <label className="visibility-label" title={`Público: quem participa deste sistema pode ler ${read}, mas não editar.`}>
         <input type="checkbox" checked={isPublic} disabled={busy} onChange={(e) => void toggle(e.target.checked)} />
         <span>
           <strong>{isPublic ? 'Público neste sistema' : 'Privado'}</strong>
           <span className="muted">
             {isPublic
-              ? ' — quem participa deste sistema pode ler a ficha e a história, mas não editar.'
-              : ' — só você vê este personagem. Marque para deixá-lo visível às outras pessoas do sistema.'}
+              ? ` — quem participa deste sistema pode ler ${read}, mas não editar.`
+              : ` — só você vê ${noun === 'personagem' ? 'este personagem' : 'este item'}. Marque para deixá-lo visível às outras pessoas do sistema.`}
           </span>
         </span>
       </label>

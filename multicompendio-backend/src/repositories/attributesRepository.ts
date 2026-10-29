@@ -1,6 +1,11 @@
 import { pool } from '../db/pool';
 import { AttributeInput, SystemAttribute } from '../types/system';
 
+// Os campos dos itens têm o mesmo formato dos atributos de personagem e ficam em outra tabela;
+// as mesmas funções servem aos dois, escolhendo a tabela por `kind`.
+export type FieldKind = 'attribute' | 'item_field';
+const TABLE: Record<FieldKind, string> = { attribute: 'system_attributes', item_field: 'system_item_fields' };
+
 // Atributos agora são adicionados um de cada vez (na página de edição do
 // sistema), então uma inserção simples via pool basta — não precisa mais
 // de transação/PoolClient como quando tudo era criado junto no cadastro.
@@ -11,9 +16,10 @@ export async function insertAttribute(
   systemId: string,
   key: string,
   attr: AttributeInput,
+  kind: FieldKind = 'attribute',
 ): Promise<SystemAttribute> {
   const result = await pool.query<SystemAttribute>(
-    `INSERT INTO system_attributes
+    `INSERT INTO ${TABLE[kind]}
        (system_id, key, name, group_name, data_type, default_value, min_value, max_value, options, is_required, display_order)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      RETURNING *`,
@@ -34,9 +40,12 @@ export async function insertAttribute(
   return result.rows[0];
 }
 
-export async function listAttributesBySystem(systemId: string): Promise<SystemAttribute[]> {
+export async function listAttributesBySystem(
+  systemId: string,
+  kind: FieldKind = 'attribute',
+): Promise<SystemAttribute[]> {
   const result = await pool.query<SystemAttribute>(
-    `SELECT * FROM system_attributes WHERE system_id = $1 ORDER BY display_order, created_at, id`,
+    `SELECT * FROM ${TABLE[kind]} WHERE system_id = $1 ORDER BY display_order, created_at, id`,
     [systemId],
   );
   return result.rows;
@@ -45,9 +54,10 @@ export async function listAttributesBySystem(systemId: string): Promise<SystemAt
 export async function findAttributeById(
   systemId: string,
   attributeId: string,
+  kind: FieldKind = 'attribute',
 ): Promise<SystemAttribute | null> {
   const result = await pool.query<SystemAttribute>(
-    `SELECT * FROM system_attributes WHERE id = $1 AND system_id = $2`,
+    `SELECT * FROM ${TABLE[kind]} WHERE id = $1 AND system_id = $2`,
     [attributeId, systemId],
   );
   return result.rows[0] ?? null;
@@ -57,9 +67,10 @@ export async function findAttributeById(
 export async function updateAttribute(
   attributeId: string,
   attr: Partial<AttributeInput>,
+  kind: FieldKind = 'attribute',
 ): Promise<SystemAttribute | null> {
   const result = await pool.query<SystemAttribute>(
-    `UPDATE system_attributes SET
+    `UPDATE ${TABLE[kind]} SET
        name          = COALESCE($2, name),
        data_type     = COALESCE($3, data_type),
        default_value = COALESCE($4, default_value),
@@ -89,7 +100,7 @@ export async function updateAttribute(
 }
 
 // Exclusão de um atributo específico do sistema
-export async function deleteAttributeById(id: string): Promise<boolean> {
-  const result = await pool.query(`DELETE FROM system_attributes WHERE id = $1`, [id]);
+export async function deleteAttributeById(id: string, kind: FieldKind = 'attribute'): Promise<boolean> {
+  const result = await pool.query(`DELETE FROM ${TABLE[kind]} WHERE id = $1`, [id]);
   return (result.rowCount ?? 0) > 0;
 }

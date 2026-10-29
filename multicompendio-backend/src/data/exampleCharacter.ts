@@ -11,6 +11,16 @@ import { StoryDocument, StoryNode } from '../types/story';
 export const EXAMPLE_SYSTEM_NAME_PREFIX = 'Dungeons & Dragons';
 export const EXAMPLE_CHARACTER_NAME = 'Elara Vento Prateado';
 
+// Inventário do personagem de exemplo: itens pré-instalados do D&D (nome e quantidade).
+export const EXAMPLE_INVENTORY: Array<[string, number]> = [
+  ['Adaga', 2],
+  ['Bordão', 1],
+  ['Poção de cura', 2],
+  ['Mochila de explorador', 1],
+  ['Corda de seda (15 m)', 1],
+  ['Bolsa de componentes', 1],
+];
+
 export function exampleValues(playerName: string): Record<string, CharacterValue> {
   return {
     // Identificação

@@ -32,15 +32,16 @@ function isMissing(raw: unknown): boolean {
 
 // RF10 — confere os valores informados contra os atributos do sistema
 // (obrigatórios, tipo, faixa de números, opções). Devolve só o que deve ser gravado.
-function validateValues(
+export function validateValues(
   attributes: SystemAttribute[],
   values: CharacterValues | undefined,
+  of: 'deste personagem' | 'deste item' = 'deste personagem',
 ): Array<{ attributeId: string; value: CharacterValue }> {
   const input = (values ?? {}) as Record<string, unknown>;
   const known = new Set(attributes.map((a) => a.id));
 
   if (Object.keys(input).some((id) => !known.has(id))) {
-    throw new ValidationError('Há um campo que não pertence ao sistema deste personagem.');
+    throw new ValidationError(`Há um campo que não pertence ao sistema ${of}.`);
   }
 
   const entries: Array<{ attributeId: string; value: CharacterValue }> = [];

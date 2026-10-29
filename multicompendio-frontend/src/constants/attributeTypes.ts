@@ -23,6 +23,15 @@ export const ATTRIBUTE_NAME_EXAMPLES: Record<AttributeDataType, string> = {
   select: 'Classe',
 };
 
+// Exemplos de nome para os campos dos itens (o que os itens de um sistema têm).
+export const ITEM_FIELD_NAME_EXAMPLES: Record<AttributeDataType, string> = {
+  number: 'Peso',
+  text: 'Dano',
+  longtext: 'Descrição',
+  boolean: 'É mágico',
+  select: 'Raridade',
+};
+
 // Agrupa atributos por seção, na ordem em que cada seção aparece pela primeira vez.
 // Atributos sem seção ficam na chave '' (e só existe grupo se houver algum).
 export function groupBySection<T extends { group_name: string | null }>(items: T[]): Array<{ section: string; items: T[] }> {

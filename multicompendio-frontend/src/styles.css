@@ -1260,3 +1260,131 @@ form select:disabled {
   opacity: 1;
   cursor: default;
 }
+
+/* ------------------------------------------------------------
+   Itens: bloco de estatísticas, inventário e listas
+   ------------------------------------------------------------ */
+/* O item como um bloco de livro de RPG: nome em destaque entre dois filetes */
+.stat-block {
+  margin: 0 0 1.2rem;
+  padding: 0.8rem 1.1rem 0.9rem;
+  background: var(--surface);
+  border-top: 3px solid var(--line);
+  border-bottom: 3px solid var(--line);
+  color: var(--ink);
+}
+
+.stat-block-name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-variant: small-caps;
+  letter-spacing: 0.02em;
+}
+
+.stat-block-caption {
+  margin: 0.1rem 0 0.5rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-style: italic;
+}
+
+.stat-block-fields {
+  margin: 0.4rem 0 0;
+}
+
+.stat-block-fields div {
+  margin: 0.1rem 0;
+}
+
+.stat-block-fields dt,
+.stat-block-fields dd {
+  display: inline;
+  margin: 0;
+}
+
+.stat-block-fields dt {
+  font-weight: 700;
+}
+
+.stat-block-text {
+  margin: 0.6rem 0 0;
+  white-space: pre-wrap;
+}
+
+.inventory-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.inventory-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.inventory-list details {
+  flex: 1 1 18rem;
+  min-width: 0;
+}
+
+.inventory-list summary {
+  cursor: pointer;
+}
+
+.inventory-name {
+  font-weight: 600;
+}
+
+.inventory-qty {
+  color: var(--muted);
+}
+
+.inventory-list details .stat-block {
+  margin-top: 0.6rem;
+}
+
+.inventory-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.inventory-actions button {
+  margin: 0;
+}
+
+.inventory-qty-field {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.inventory-qty-field input {
+  width: 5rem;
+}
+
+.inventory-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.inventory-add-row select {
+  flex: 1 1 14rem;
+}
+
+.inventory-add-row input {
+  width: 6rem;
+}
+
+.inventory-add-row button {
+  margin: 0;
+}
