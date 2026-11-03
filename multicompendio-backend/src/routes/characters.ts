@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as controller from '../controllers/charactersController';
 import * as stories from '../controllers/storiesController';
 import * as items from '../controllers/itemsController';
+import * as pdf from '../controllers/pdfController';
 
 const router = Router();
 
@@ -9,6 +10,9 @@ router.get('/:id', controller.getOne);
 router.put('/:id', controller.update);
 router.delete('/:id', controller.remove);
 router.put('/:id/visibility', controller.setVisibility);
+
+// Exportação em PDF (v1.7)
+router.get('/:id/pdf', pdf.characterPdf);
 
 // Inventário do personagem (v1.5)
 router.get('/:id/items', items.inventory);

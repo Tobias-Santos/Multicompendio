@@ -1,0 +1,6 @@
+Fontes usadas na exportação em PDF (src/pdf).
+
+- Fraunces (títulos) e Work Sans (texto), ambas licenciadas sob a SIL Open Font License 1.1.
+  O texto das licenças está nos arquivos OFL-Fraunces.txt e OFL-WorkSans.txt desta pasta.
+- Os arquivos .ttf são o recorte "latin" das fontes (cobre o português), convertido do formato WOFF2
+  distribuído pelos pacotes @fontsource. A conversão só muda o formato do arquivo.

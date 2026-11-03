@@ -5,6 +5,8 @@ import { CharacterSummary } from '../types/character';
 import { getSystem, deleteSystem } from '../api/systemsApi';
 import { leaveSystem } from '../api/sharingApi';
 import { SharePanel } from '../components/SharePanel';
+import { SimplePdfDownload } from '../components/PdfDownloads';
+import { blankSheetPdfPath, pdfFileName } from '../api/pdfApi';
 import { deleteCharacter, listCharacters } from '../api/charactersApi';
 import { SystemPropertiesForm } from '../components/SystemPropertiesForm';
 import { AttributesTable } from '../components/AttributesTable';
@@ -241,6 +243,12 @@ export function SystemPage() {
             Novo personagem
           </Link>
         </div>
+        <SimplePdfDownload
+          label="Ficha em branco (PDF)"
+          title="Gera a ficha deste sistema sem valores, com espaço para escrever à mão."
+          buildPath={(paper) => blankSheetPdfPath(id, paper)}
+          filename={pdfFileName(data.system.name, 'ficha em branco')}
+        />
         <CharacterList
           characters={characters.filter((c) => c.is_mine)}
           onDelete={handleDeleteCharacter}

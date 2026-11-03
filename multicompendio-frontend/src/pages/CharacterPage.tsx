@@ -5,6 +5,7 @@ import { deleteCharacter, getCharacter, updateCharacter } from '../api/character
 import { CharacterForm } from '../components/CharacterForm';
 import { VisibilityToggle } from '../components/VisibilityToggle';
 import { InventoryPanel } from '../components/InventoryPanel';
+import { CharacterPdfPanel } from '../components/PdfDownloads';
 import { setVisibility } from '../api/charactersApi';
 // o editor (ProseMirror) é pesado e só é preciso na aba da história: carrega sob demanda
 const StoryPanel = lazy(() => import('../components/StoryPanel').then((m) => ({ default: m.StoryPanel })));
@@ -97,6 +98,8 @@ export function CharacterPage() {
         </Link>
         <h1>{data.character.name}</h1>
       </header>
+
+      <CharacterPdfPanel characterId={id} characterName={data.character.name} />
 
       {canEdit ? (
         <VisibilityToggle

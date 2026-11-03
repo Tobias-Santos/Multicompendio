@@ -37,6 +37,33 @@ export class ApiError extends Error {
 // Rotas que não usam sessão: um 401 ali significa "senha incorreta", não "sessão expirada".
 const PUBLIC_PATHS = ['/auth/login', '/auth/register'];
 
+// Transforma uma resposta de erro do servidor em ApiError (e trata a sessão expirada).
+async function failWith(res: Response, isPublic: boolean): Promise<never> {
+  let message = 'Algo deu errado. Tente novamente.';
+  let body: unknown = null;
+  try {
+    body = await res.json();
+    const error = (body as { error?: string } | null)?.error;
+    if (error) message = error;
+  } catch {
+    // resposta sem corpo JSON — mantém a mensagem padrão
+  }
+
+  if (res.status === 401 && !isPublic) {
+    clearToken();
+    onSessionExpired?.();
+  }
+  throw new ApiError(message, res.status, body);
+}
+
+// Baixa um arquivo (ex.: PDF) com a sessão da pessoa; o link direto não serviria, porque a sessão vai no cabeçalho.
+export async function requestBlob(path: string): Promise<Blob> {
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!res.ok) return failWith(res, false);
+  return res.blob();
+}
+
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const isPublic = PUBLIC_PATHS.some((p) => path.startsWith(p));
   const token = isPublic ? null : getToken();
@@ -50,23 +77,7 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
     },
   });
 
-  if (!res.ok) {
-    let message = 'Algo deu errado. Tente novamente.';
-    let body: unknown = null;
-    try {
-      body = await res.json();
-      const error = (body as { error?: string } | null)?.error;
-      if (error) message = error;
-    } catch {
-      // resposta sem corpo JSON — mantém a mensagem padrão
-    }
-
-    if (res.status === 401 && !isPublic) {
-      clearToken();
-      onSessionExpired?.();
-    }
-    throw new ApiError(message, res.status, body);
-  }
+  if (!res.ok) return failWith(res, isPublic);
 
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;

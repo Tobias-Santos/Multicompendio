@@ -5,6 +5,8 @@ import { deleteItem, getItem, setItemVisibility, updateItem } from '../api/items
 import { CharacterForm } from '../components/CharacterForm';
 import { ItemStatBlock } from '../components/ItemStatBlock';
 import { VisibilityToggle } from '../components/VisibilityToggle';
+import { SimplePdfDownload } from '../components/PdfDownloads';
+import { itemPdfPath, pdfFileName } from '../api/pdfApi';
 
 export function ItemPage() {
   const { id } = useParams<{ id: string }>();
@@ -58,6 +60,13 @@ export function ItemPage() {
         </Link>
         <h1>{item.name}</h1>
       </header>
+
+      <SimplePdfDownload
+        label="Baixar bloco em PDF"
+        title="Gera um PDF só com o bloco de estatísticas deste item, para imprimir."
+        buildPath={(paper) => itemPdfPath(item.id, paper)}
+        filename={pdfFileName(item.name, 'bloco')}
+      />
 
       {item.is_preinstalled && (
         <p className="readonly-banner" role="note">
