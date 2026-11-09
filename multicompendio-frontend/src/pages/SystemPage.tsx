@@ -137,6 +137,16 @@ export function SystemPage() {
                 onUpdated={(system) => setData((prev) => (prev ? { ...prev, system } : prev))}
               />
 
+              <div className="card">
+                <h2>Ficha do personagem</h2>
+                <p className="muted">
+                  Escolha em que página, em que ponto e com que formato cada campo aparece na ficha impressa e no PDF.
+                </p>
+                <Link to={`/sistemas/${id}/layout`} className="button-link" title="Abre o editor visual da ficha: arraste os campos, mude o tamanho e o formato.">
+                  Organizar a ficha
+                </Link>
+              </div>
+
               <SharePanel systemId={id} />
 
               <button type="button" onClick={handleDeleteSystem} className="danger">
@@ -246,7 +256,7 @@ export function SystemPage() {
         <SimplePdfDownload
           label="Ficha em branco (PDF)"
           title="Gera a ficha deste sistema sem valores, com espaço para escrever à mão."
-          buildPath={(paper) => blankSheetPdfPath(id, paper)}
+          path={blankSheetPdfPath(id)}
           filename={pdfFileName(data.system.name, 'ficha em branco')}
         />
         <CharacterList

@@ -5,21 +5,21 @@ import { CharacterValues } from '../types/character';
 import { Inventory } from '../types/item';
 import { StoryDocument } from '../types/story';
 import { SystemAttribute } from '../types/system';
-import { BlockData, blockRows, drawInventory } from './items';
-import { BAR_H, Flow, drawBar, drawSection } from './kit';
-import { drawSheet } from './sheet';
+import { SheetLayout } from '../layoutCore';
+import { BlockData, blockRows, drawInventory, visibleEntries } from './items';
+import { Flow, drawBar } from './kit';
+import { drawLayoutPages } from './layoutSheet';
 import { drawStory } from './story';
-import { COLORS, FONT, GAP, MARGIN, PAPERS, Paper } from './theme';
+import { COLORS, FONT, MARGIN, PAPERS, Paper } from './theme';
 import { putText, sanitize, wrapLines } from './text';
 
 // Exportação em PDF (RF10 e RF13). O layout é genérico: não depende de nenhum modelo de terceiros e se
 // adapta aos campos que o sistema tiver. Todo o desenho é feito aqui, com fontes embutidas.
 
 export interface PdfOptions {
-  paper: Paper;
+  paper: Paper; // por enquanto só A4: o layout é desenhado em milímetros nessa folha
   inventory: boolean; // inventário e blocos dos itens
   story: boolean; // história de origem
-  hideEmpty: boolean; // não mostra os campos vazios
 }
 
 export interface CharacterPdfModel {
@@ -27,6 +27,7 @@ export interface CharacterPdfModel {
   characterName: string;
   ownerName: string;
   attributes: SystemAttribute[];
+  layout: SheetLayout; // onde cada seção e cada campo ficam na folha (salvo, curado ou automático)
   values: CharacterValues;
   inventory: Inventory | null;
   story: StoryDocument | null;
@@ -92,11 +93,23 @@ function addFooters(doc: Doc, systemName: string): void {
 }
 
 // ------------------------------------------------------------------ ficha de um personagem (RF10)
-export function buildCharacterPdf(model: CharacterPdfModel, options: PdfOptions): Promise<Buffer> {
+// O resultado traz o PDF e os campos (ids de atributo) cujo texto não coube nem com a fonte no mínimo e foi cortado.
+export interface PdfOutput {
+  buffer: Buffer;
+  cut: string[];
+}
+
+export async function buildCharacterPdf(model: CharacterPdfModel, options: PdfOptions): Promise<PdfOutput> {
   const { doc, flow, result } = createDocument(options.paper, `${model.characterName} — ficha (${model.systemName})`, 'Ficha de personagem');
-  drawHeader(flow, model.characterName, `${model.systemName} · Jogador: ${model.ownerName}`);
-  drawSheet(flow, model.attributes, model.values, { blank: false, hideEmpty: options.hideEmpty });
-  if (options.inventory && model.inventory) drawInventory(flow, model.inventory);
+  // a ficha: uma página do PDF para cada página do layout, com cada seção e cada campo na posição e no formato escolhidos
+  const drawn = drawLayoutPages(doc, model.layout, model.attributes, model.values, {
+    blank: false,
+    onFirstPage: () => drawHeader(flow, model.characterName, `${model.systemName} · Jogador: ${model.ownerName}`),
+  });
+  if (options.inventory && model.inventory && visibleEntries(model.inventory).length > 0) {
+    flow.newPage();
+    drawInventory(flow, model.inventory);
+  }
   if (options.story && model.story && model.story.content.length > 0) {
     flow.newPage();
     drawBar(flow, 'História de origem');
@@ -105,17 +118,16 @@ export function buildCharacterPdf(model: CharacterPdfModel, options: PdfOptions)
   }
   addFooters(doc, model.systemName);
   doc.end();
-  return result;
+  return { buffer: await result, cut: drawn.overflow };
 }
 
 // ------------------------------------------------------------------ ficha em branco do sistema
-export function buildBlankSheetPdf(systemName: string, attributes: SystemAttribute[], options: Pick<PdfOptions, 'paper'>): Promise<Buffer> {
+export async function buildBlankSheetPdf(systemName: string, attributes: SystemAttribute[], layout: SheetLayout, options: Pick<PdfOptions, 'paper'>): Promise<PdfOutput> {
   const { doc, flow, result } = createDocument(options.paper, `Ficha em branco (${systemName})`, 'Ficha em branco');
-  drawHeader(flow, 'Ficha em branco', systemName);
-  drawSheet(flow, attributes, {}, { blank: true, hideEmpty: false });
+  const drawn = drawLayoutPages(doc, layout, attributes, {}, { blank: true, onFirstPage: () => drawHeader(flow, 'Ficha em branco', systemName) });
   addFooters(doc, systemName);
   doc.end();
-  return result;
+  return { buffer: await result, cut: drawn.overflow };
 }
 
 // ------------------------------------------------------------------ bloco de estatísticas de um item (RF13)
@@ -128,6 +140,3 @@ export function buildItemPdf(systemName: string, block: BlockData, options: Pick
   return result;
 }
 
-void BAR_H;
-void GAP;
-void drawSection;

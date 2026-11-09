@@ -1,0 +1,1172 @@
+/* ------------------------------------------------------------
+   Editor do layout da ficha (v1.8). Tudo leva o prefixo "le-" e fica sob .le, para não brigar com os estilos globais
+   do app (botão, campo, .card). A folha em si é sempre clara, como o papel, nos dois temas.
+   ------------------------------------------------------------ */
+.layout.le-layout {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 1rem 1rem 5rem;
+}
+
+.le {
+  --le-ink: var(--ink);
+  --le-muted: var(--muted);
+  --le-surface: var(--surface);
+  --le-bg: var(--bg);
+  --le-line: var(--line-soft);
+  --le-line-strong: var(--line);
+  --le-accent: var(--accent-fill);
+  --le-accent-text: var(--accent-text);
+  --le-accent-ink: var(--accent-ink);
+  --le-warn: #c9482f;
+  --le-focus: #1b5fb8;
+  --le-shadow: 0 6px 22px rgba(60, 40, 20, 0.2);
+  --mm: 4px;
+  color: var(--le-ink);
+}
+:root[data-theme='dark'] .le {
+  --le-warn: #ff8f70;
+  --le-focus: #7fb0f5;
+  --le-shadow: 0 6px 22px rgba(0, 0, 0, 0.55);
+}
+.le *,
+.le *::before,
+.le *::after {
+  box-sizing: border-box;
+}
+.le [hidden] {
+  display: none !important;
+}
+.le-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- campos e botões: neutraliza os estilos globais ---------- */
+.le input,
+.le select {
+  display: inline-block;
+  width: auto;
+  margin: 0;
+  padding: 5px 8px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 1px solid var(--le-line-strong);
+  background: var(--le-bg);
+  color: var(--le-ink);
+}
+.le button.le-btn {
+  margin: 0;
+  padding: 6px 11px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid var(--le-line-strong);
+  border-radius: 8px;
+  background: var(--le-surface);
+  color: var(--le-ink);
+  filter: none;
+  transform: none;
+}
+.le button.le-btn:hover:not(:disabled) {
+  background: var(--border);
+  filter: none;
+}
+.le button.le-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.le button.le-btn.le-primary {
+  background: var(--le-accent);
+  border-color: var(--le-accent);
+  color: var(--le-accent-ink);
+  font-weight: 600;
+}
+.le button.le-btn.le-primary:hover:not(:disabled) {
+  background: var(--le-accent);
+  filter: brightness(1.08);
+}
+.le button.le-btn.le-danger {
+  color: var(--le-accent-text);
+  border-color: var(--le-accent-text);
+}
+.le :focus-visible {
+  outline: 2px solid var(--le-focus);
+  outline-offset: 2px;
+}
+
+/* ---------- barra de ferramentas ---------- */
+.le-top {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: var(--le-surface);
+  border: 1px solid var(--le-line);
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.le-top h1 {
+  margin: 0;
+  font: 600 1.15rem var(--font-display);
+}
+.le-top small {
+  display: block;
+  font: 400 12px var(--font-body);
+  color: var(--le-muted);
+}
+.le-grp {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.le-grp label {
+  font-size: 13px;
+  color: var(--le-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.le-seg {
+  display: inline-flex;
+  border: 1px solid var(--le-line-strong);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.le .le-seg button {
+  margin: 0;
+  border: 0;
+  border-right: 1px solid var(--le-line);
+  border-radius: 0;
+  background: var(--le-surface);
+  color: var(--le-ink);
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.le .le-seg button:last-child {
+  border-right: 0;
+}
+.le .le-seg button[aria-pressed='true'] {
+  background: var(--le-accent);
+  color: var(--le-accent-ink);
+}
+.le-right {
+  margin-left: auto;
+  flex-wrap: nowrap;
+}
+.le-right .le-status {
+  white-space: nowrap;
+}
+.le button.le-btn.le-warnbtn {
+  border-color: var(--le-warn);
+  color: var(--le-warn);
+  font-weight: 600;
+}
+.le-status {
+  font-size: 13px;
+  color: var(--le-muted);
+}
+.le-status.dirty {
+  color: var(--le-accent-text);
+  font-weight: 600;
+}
+.le-banner {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--le-accent-text);
+  border-radius: 8px;
+  background: var(--le-surface);
+  font-size: 14px;
+}
+.le-banner.warn {
+  border-color: var(--le-warn);
+}
+.le-hint {
+  color: var(--le-muted);
+  font-size: 13px;
+  margin: 0 0 10px;
+}
+.le-hint kbd,
+.le-tips kbd {
+  font: 12px var(--font-body);
+  border: 1px solid var(--le-line-strong);
+  border-radius: 4px;
+  padding: 0 4px;
+  background: var(--le-surface);
+}
+
+/* ---------- gaveta | folha | opções ---------- */
+.le-main {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr) 300px;
+  gap: 14px;
+  align-items: start;
+}
+.le.drawer-collapsed .le-main {
+  grid-template-columns: 46px minmax(0, 1fr) 300px;
+}
+.le-stage {
+  min-width: 0;
+}
+.le-canvaswrap {
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 4px 2px 8px;
+}
+
+/* ---------- gaveta ---------- */
+.le-drawer {
+  position: sticky;
+  top: 74px;
+  max-height: calc(100vh - 90px);
+  display: flex;
+  flex-direction: column;
+  background: var(--le-surface);
+  border: 1px solid var(--le-line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.le-drawer.is-drop {
+  border-color: var(--le-accent);
+  box-shadow: 0 0 0 2px var(--le-accent);
+}
+.le-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 10px 10px 6px 12px;
+}
+.le-drawer-head h2 {
+  margin: 0;
+  font: 600 16px var(--font-display);
+}
+.le-drawer-head h2 span,
+.le-count-mini {
+  font: 600 12px var(--font-body);
+  color: var(--le-accent-ink);
+  background: var(--le-accent);
+  border-radius: 10px;
+  padding: 0 7px;
+  margin-left: 4px;
+}
+.le .le-count-mini {
+  display: none;
+  margin: 0;
+}
+.le .le-drawer-toggle {
+  margin: 0;
+  padding: 0;
+  width: 30px;
+  height: 28px;
+  border: 1px solid var(--le-line-strong);
+  border-radius: 8px;
+  background: var(--le-surface);
+  color: var(--le-ink);
+}
+.le-drawer-body {
+  padding: 0 10px 10px;
+  overflow: auto;
+}
+.le-drawer-body input[type='search'] {
+  width: 100%;
+  margin: 4px 0 8px;
+}
+.le-dlist {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.le-dchip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--border);
+  border: 1px solid var(--le-line-strong);
+  border-radius: 9px;
+  padding: 5px 5px 5px 7px;
+  font-size: 13px;
+  cursor: grab;
+}
+.le-dchip.is-sel {
+  outline: 2px solid var(--le-accent);
+}
+.le-dchip.is-drag {
+  opacity: 0.3;
+}
+.le-dn {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.25;
+}
+.le-dn b {
+  font-weight: 500;
+  display: block;
+  overflow-wrap: anywhere;
+}
+.le-dn small {
+  color: var(--le-muted);
+  font-size: 11px;
+}
+.le .le-dchip button {
+  margin: 0;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 0;
+  border-radius: 8px;
+  background: var(--le-accent);
+  color: var(--le-accent-ink);
+}
+.le-drawer-empty {
+  color: var(--le-muted);
+  font-size: 13px;
+  padding: 4px 2px 10px;
+}
+.le.drawer-collapsed .le-drawer-body,
+.le.drawer-collapsed .le-drawer-head h2 {
+  display: none;
+}
+.le.drawer-collapsed .le-drawer-head {
+  flex-direction: column;
+  padding: 8px 6px;
+}
+.le.drawer-collapsed .le-count-mini {
+  display: inline-block;
+}
+.le-grip {
+  cursor: grab;
+  color: var(--le-muted);
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 3px;
+  touch-action: none;
+  user-select: none;
+}
+.le-drawer-close {
+  display: none;
+}
+
+/* ---------- a folha: tudo em milímetros (1 mm = var(--mm)) ---------- */
+.le-pages {
+  --p-ink: #1f1b16;
+  --p-muted: #6b6358;
+  --p-line: #b9b2a6;
+  --p-bar: #e8e4dc;
+  --p-bg: #ffffff;
+  width: calc(210 * var(--mm));
+  margin: 0 auto;
+}
+.le-pagelabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--le-muted);
+  margin: 0 0 3px 2px;
+  min-height: 24px;
+}
+.le .le-pagelabel button {
+  margin: 0;
+  font-size: 12px;
+  padding: 0 8px;
+  font-weight: 500;
+  border: 1px solid var(--le-line-strong);
+  background: var(--le-surface);
+  color: var(--le-ink);
+  border-radius: 6px;
+}
+.le-sheet {
+  position: relative;
+  width: calc(210 * var(--mm));
+  height: calc(297 * var(--mm));
+  margin: 0 0 calc(7 * var(--mm));
+  background: var(--p-bg);
+  color: var(--p-ink);
+  border: 1px solid var(--le-line-strong);
+  box-shadow: 0 2px 14px rgba(60, 40, 20, 0.16);
+}
+.le-sheet.is-drop {
+  outline: 2px dashed var(--le-accent);
+  outline-offset: 2px;
+}
+.le-sheet-head {
+  position: absolute;
+  left: calc(10 * var(--mm));
+  top: calc(10 * var(--mm));
+  width: calc(190 * var(--mm));
+  height: calc(17 * var(--mm));
+}
+.le-sheet-head h2 {
+  font: 600 calc(8.1 * var(--mm)) / 1.15 var(--font-display);
+  margin: 0;
+  color: var(--p-ink);
+}
+.le-sheet-head p {
+  margin: calc(0.6 * var(--mm)) 0 0;
+  color: var(--p-muted);
+  font-size: calc(3.2 * var(--mm));
+}
+.le-sheet-head::after {
+  content: '';
+  display: block;
+  height: calc(0.55 * var(--mm));
+  background: var(--accent-fill);
+  margin-top: calc(2.4 * var(--mm));
+}
+.le-sheet-foot {
+  position: absolute;
+  left: calc(10 * var(--mm));
+  right: calc(10 * var(--mm));
+  bottom: calc(5.5 * var(--mm));
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--p-line);
+  padding-top: calc(1.4 * var(--mm));
+  font-size: calc(2.6 * var(--mm));
+  color: var(--p-muted);
+}
+.le-sec {
+  position: absolute;
+  left: calc((10 + var(--sx)) * var(--mm));
+  top: calc((10 + var(--sy)) * var(--mm));
+  width: calc(var(--sw) * var(--mm));
+}
+.le-sec.is-drag {
+  opacity: 0.3;
+}
+.le-sec-bar {
+  height: calc(6.5 * var(--mm));
+  margin: 0 0 calc(1.5 * var(--mm));
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--p-bar);
+  border-left: calc(0.9 * var(--mm)) solid var(--accent-fill);
+  border-radius: calc(0.8 * var(--mm));
+  padding: 0 4px 0 3px;
+  overflow: hidden;
+  color: var(--p-ink);
+}
+.le-sec.is-sel .le-sec-bar {
+  outline: 2px solid var(--le-accent);
+}
+.le-sec-title {
+  font: 600 calc(3.35 * var(--mm)) var(--font-display);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.le-sec-meta {
+  font-size: calc(2.6 * var(--mm));
+  color: var(--p-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.le-sec-grip {
+  cursor: grab;
+  color: var(--p-muted);
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 3px;
+  touch-action: none;
+  user-select: none;
+  flex: none;
+}
+.le-sec-tools {
+  margin-left: auto;
+  display: flex;
+  gap: 1px;
+  flex: none;
+}
+.le .le-sec-tools button {
+  margin: 0;
+  padding: 0;
+  font-weight: 400;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--p-ink);
+  width: min(22px, calc(5.4 * var(--mm)));
+  height: min(22px, calc(5.4 * var(--mm)));
+  font-size: 13px;
+  line-height: 1;
+}
+.le .le-sec-tools button:hover:not(:disabled) {
+  background: var(--p-bg);
+  border-color: var(--p-line);
+  filter: none;
+}
+.le-sec-body {
+  position: relative;
+  width: 100%;
+  height: calc(var(--h) * var(--mm));
+}
+.le-pages.edit .le-sec-body {
+  outline: 1px dashed var(--p-line);
+  background-image: radial-gradient(circle, rgba(120, 100, 80, 0.22) 0.8px, transparent 1px);
+  background-size: calc(5 * var(--mm)) calc(5 * var(--mm));
+}
+.le-sec.is-sel .le-sec-body {
+  outline: 1px dashed var(--accent-fill);
+}
+.le-sec.is-drop .le-sec-body {
+  outline: 2px dashed var(--accent-fill);
+}
+.le-sdim {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 6px);
+  transform: translateX(-50%);
+  background: var(--le-ink);
+  color: var(--le-bg);
+  font-size: 10.5px;
+  border-radius: 6px;
+  padding: 0 6px;
+  white-space: nowrap;
+  z-index: 9;
+  pointer-events: none;
+  display: none;
+}
+.le-sec.is-sel > .le-sdim {
+  display: block;
+}
+
+/* ---------- campos ---------- */
+.le-card {
+  position: absolute;
+  background: var(--p-bg);
+  border: 1px solid var(--p-line);
+  border-radius: calc(0.9 * var(--mm));
+  color: var(--p-ink);
+}
+.le-card.le-sh-rounded {
+  border-radius: calc(3 * var(--mm));
+}
+.le-card.le-sh-pill {
+  border-radius: 999px;
+}
+.le-card.le-sh-ellipse,
+.le-card.le-sh-circle {
+  border-radius: 50%;
+}
+.le-card.svgshape {
+  background: transparent;
+  border-color: transparent;
+}
+.le-shp {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.le-shp * {
+  fill: var(--p-bg);
+  stroke: var(--p-line);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+}
+.le-pages.edit .le-card:hover .le-shp * {
+  stroke: var(--accent-fill);
+}
+.le-card.is-over .le-shp * {
+  stroke: var(--le-warn);
+  stroke-width: 2px;
+}
+.le-c {
+  position: absolute;
+  inset: 0;
+  padding: calc((1.2 + var(--it, 0)) * var(--mm)) calc((1.7 + var(--ir, 0)) * var(--mm)) calc((1.2 + var(--ib, 0)) * var(--mm)) calc((1.7 + var(--il, 0)) * var(--mm));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: inherit;
+  --fit: 1;
+}
+.le-lab {
+  font-size: calc(2.4 * var(--mm));
+  line-height: 1.2;
+  color: var(--p-muted);
+}
+.le-val {
+  font-size: calc(3.25 * var(--mm) * var(--fit));
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.le-c-num {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.le-c-num .le-val {
+  font: 600 calc(4.9 * var(--mm) * var(--fit)) / 1.1 var(--font-display);
+  order: 1;
+}
+.le-c-num .le-lab {
+  order: 2;
+  margin-top: calc(0.4 * var(--mm));
+}
+.le-c-text {
+  justify-content: center;
+}
+.le-c-bool {
+  flex-direction: row;
+  align-items: center;
+  gap: calc(2 * var(--mm));
+}
+.le-c-bool .le-lab {
+  font-size: calc(2.8 * var(--mm) * var(--fit));
+  color: var(--p-ink);
+}
+.le-box {
+  flex: none;
+  width: calc(3.1 * var(--mm));
+  height: calc(3.1 * var(--mm));
+  border: 1.5px solid var(--p-ink);
+  border-radius: 2px;
+}
+.le-c-long,
+.le-c-tn {
+  gap: calc(0.7 * var(--mm));
+}
+.le-area {
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--p-line);
+  border-radius: calc(0.9 * var(--mm));
+  padding: calc(1.1 * var(--mm)) calc(1.6 * var(--mm));
+  font-size: calc(3.1 * var(--mm) * var(--fit));
+  line-height: 1.35;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.le-tn-head {
+  display: flex;
+  align-items: center;
+  gap: calc(1.8 * var(--mm));
+}
+.le-mini {
+  min-width: calc(8 * var(--mm));
+  padding: 0 calc(1.4 * var(--mm));
+  border: 1px solid var(--p-line);
+  border-radius: calc(0.9 * var(--mm));
+  font-style: normal;
+  font-size: calc(3 * var(--mm));
+  text-align: center;
+}
+.le-card.is-over {
+  border-color: var(--le-warn);
+  box-shadow: 0 0 0 1.5px var(--le-warn);
+}
+.le-card.svgshape.is-over {
+  box-shadow: none;
+}
+.le-card.is-over::after {
+  content: '⚠ não cabe';
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  font-size: 10px;
+  background: var(--le-warn);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0 5px;
+  z-index: 3;
+}
+
+/* ---------- edição ---------- */
+.le-pages.edit {
+  /* sem isto, o texto selecionado depois de um arrasto vira um arrastar-e-soltar nativo do navegador, que cancela o gesto */
+  user-select: none;
+  -webkit-user-select: none;
+}
+.le-dchip {
+  user-select: none;
+  -webkit-user-select: none;
+}
+.le-pages.edit .le-card {
+  cursor: pointer;
+}
+.le-pages.edit .le-card:hover:not(.svgshape) {
+  border-color: var(--accent-fill);
+}
+.le-pages.edit .le-card > .le-card-grip {
+  position: absolute;
+  top: -9px;
+  right: 4px;
+  z-index: 4;
+  display: none;
+  font-size: 12px;
+  background: var(--le-accent);
+  color: var(--le-accent-ink);
+  border-radius: 4px 4px 0 0;
+  padding: 0 5px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  line-height: 14px;
+  height: 14px;
+}
+.le-pages.edit .le-card:hover > .le-card-grip,
+.le-pages.edit .le-card.is-sel > .le-card-grip {
+  display: block;
+}
+.le-card.is-sel {
+  outline: 2px solid var(--le-accent);
+  outline-offset: 1px;
+  z-index: 2;
+}
+.le-card.is-drag {
+  opacity: 0.3;
+}
+.le-dim {
+  position: absolute;
+  left: 50%;
+  bottom: -19px;
+  transform: translateX(-50%);
+  background: var(--le-ink);
+  color: var(--le-bg);
+  font-size: 10.5px;
+  border-radius: 6px;
+  padding: 0 6px;
+  white-space: nowrap;
+  z-index: 6;
+  display: none;
+  pointer-events: none;
+}
+.le-card.is-sel .le-dim {
+  display: block;
+}
+.le-hd {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  margin: -5.5px 0 0 -5.5px;
+  background: var(--le-accent);
+  border: 2px solid #fff;
+  border-radius: 3px;
+  z-index: 8;
+  touch-action: none;
+}
+.le-hd::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+.le-hd[data-h='n'],
+.le-hd[data-h='s'] {
+  left: 50%;
+  cursor: ns-resize;
+}
+.le-hd[data-h='e'],
+.le-hd[data-h='w'] {
+  top: 50%;
+  cursor: ew-resize;
+}
+.le-hd[data-h='n'],
+.le-hd[data-h='ne'],
+.le-hd[data-h='nw'] {
+  top: 0;
+}
+.le-hd[data-h='s'],
+.le-hd[data-h='se'],
+.le-hd[data-h='sw'] {
+  top: 100%;
+}
+.le-hd[data-h='w'],
+.le-hd[data-h='nw'],
+.le-hd[data-h='sw'] {
+  left: 0;
+}
+.le-hd[data-h='e'],
+.le-hd[data-h='ne'],
+.le-hd[data-h='se'] {
+  left: 100%;
+}
+.le-hd[data-h='ne'],
+.le-hd[data-h='sw'] {
+  cursor: nesw-resize;
+}
+.le-hd[data-h='nw'],
+.le-hd[data-h='se'] {
+  cursor: nwse-resize;
+}
+.le-hd.le-shd {
+  background: #1b5fb8;
+  border-radius: 50%;
+  width: 13px;
+  height: 13px;
+  margin: -6.5px 0 0 -6.5px;
+}
+:root[data-theme='dark'] .le-hd.le-shd {
+  background: #7fb0f5;
+}
+.le-ghost {
+  --p-ink: #1f1b16;
+  --p-muted: #6b6358;
+  --p-line: #b9b2a6;
+  --p-bar: #e8e4dc;
+  --p-bg: #ffffff;
+  color: #1f1b16;
+  position: fixed;
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: var(--le-shadow);
+  opacity: 0.9;
+  border: 1px solid var(--le-accent);
+  background: #fff;
+  margin: 0;
+}
+.le-ghost.le-sec-ghost {
+  padding: 6px 14px;
+  font: 600 14px var(--font-display);
+  width: auto !important;
+  height: auto !important;
+}
+.le-ghost.le-dchip {
+  background: var(--border);
+  color: var(--ink);
+}
+.le-dropbox {
+  position: absolute;
+  z-index: 4;
+  border: 2px dashed var(--le-accent);
+  background: rgba(196, 14, 40, 0.08);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.le-dropbox.bad {
+  border-color: var(--le-warn);
+  background: rgba(201, 72, 47, 0.14);
+}
+.le-dropbox span {
+  position: absolute;
+  left: 0;
+  top: -19px;
+  font-size: 10.5px;
+  background: var(--le-ink);
+  color: var(--le-bg);
+  border-radius: 6px;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+.le-guide {
+  position: absolute;
+  z-index: 4;
+  background: #1b9a8a;
+  pointer-events: none;
+}
+.le-guide.v {
+  width: 1px;
+  top: 0;
+  bottom: 0;
+}
+.le-guide.h {
+  height: 1px;
+  left: 0;
+  right: 0;
+}
+.le.dragging,
+.le.dragging * {
+  cursor: grabbing !important;
+}
+.le .le-add-page {
+  display: block;
+  width: 100%;
+  max-width: calc(210 * var(--mm));
+  margin: 0 auto 6px;
+  padding: 12px;
+  border: 1.5px dashed var(--le-line-strong);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--le-muted);
+  font-weight: 500;
+}
+.le .le-add-page:hover,
+.le .le-add-page.is-drop {
+  border-color: var(--le-accent);
+  color: var(--le-ink);
+  background: transparent;
+}
+
+/* ---------- painel de opções ---------- */
+.le-inspector {
+  position: sticky;
+  top: 74px;
+  max-height: calc(100vh - 90px);
+  overflow: auto;
+  background: var(--le-surface);
+  border: 1px solid var(--le-line);
+  border-radius: 12px;
+  padding: 14px;
+}
+.le-inspector h2 {
+  margin: 0 0 4px;
+  font: 600 17px var(--font-display);
+}
+.le-inspector h3 {
+  margin: 12px 0 6px;
+  font: 500 12px var(--font-body);
+  color: var(--le-muted);
+}
+.le-pill {
+  display: inline-block;
+  font-size: 12px;
+  background: var(--border);
+  border: 1px solid var(--le-line);
+  border-radius: 12px;
+  padding: 0 9px;
+  color: var(--le-muted);
+}
+.le-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.le-row .le-btn {
+  flex: 1 1 auto;
+}
+.le-nums {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 8px;
+}
+.le-nums label {
+  font-size: 12px;
+  color: var(--le-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.le-nums input {
+  width: 100%;
+}
+.le-inspector input[type='text'],
+.le-inspector select {
+  width: 100%;
+}
+.le-dpad {
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-template-rows: repeat(2, 34px);
+  gap: 4px;
+  justify-content: start;
+}
+.le .le-dpad button.le-btn {
+  padding: 0;
+  font-size: 16px;
+}
+.le-dpad .u {
+  grid-column: 2;
+  grid-row: 1;
+}
+.le-dpad .l {
+  grid-column: 1;
+  grid-row: 2;
+}
+.le-dpad .d {
+  grid-column: 2;
+  grid-row: 2;
+}
+.le-dpad .r {
+  grid-column: 3;
+  grid-row: 2;
+}
+.le-shapes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.le .le-shapes button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  padding: 5px 2px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.15;
+  background: var(--le-surface);
+  color: var(--le-ink);
+  border: 1px solid var(--le-line-strong);
+  border-radius: 8px;
+}
+.le-shapes button svg {
+  width: 38px;
+  height: 26px;
+}
+.le-shapes button svg * {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6px;
+  vector-effect: non-scaling-stroke;
+}
+.le .le-shapes button[aria-pressed='true'] {
+  background: var(--le-accent);
+  color: var(--le-accent-ink);
+  border-color: var(--le-accent);
+}
+.le .le-shapes button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.le-tips {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--le-muted);
+  font-size: 13px;
+}
+.le-tips li {
+  margin: 4px 0;
+}
+.le-badmsg {
+  margin: 8px 0 0;
+  padding: 6px 9px;
+  border: 1px solid var(--le-warn);
+  border-radius: 8px;
+  color: var(--le-warn);
+  font-size: 13px;
+}
+.le-close-sheet {
+  display: none;
+}
+.le-toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 20px;
+  z-index: 60;
+  background: var(--le-ink);
+  color: var(--le-bg);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font-size: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  box-shadow: var(--le-shadow);
+  max-width: min(92vw, 560px);
+}
+.le .le-toast button {
+  margin: 0;
+  padding: 1px 9px;
+  background: transparent;
+  border: 1px solid currentColor;
+  color: inherit;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* ---------- telas estreitas ---------- */
+@media (max-width: 1199px) {
+  .le-main {
+    grid-template-columns: 190px minmax(0, 1fr) 270px;
+    gap: 10px;
+  }
+  .le.drawer-collapsed .le-main {
+    grid-template-columns: 46px minmax(0, 1fr) 270px;
+  }
+}
+@media (max-width: 979px) {
+  .le-card {
+    scroll-margin-bottom: 54vh;
+    scroll-margin-top: 16px;
+    scroll-margin-left: 16px;
+    scroll-margin-right: 16px;
+  }
+  .le-top {
+    position: static;
+  }
+  .le-main,
+  .le.drawer-collapsed .le-main {
+    grid-template-columns: minmax(0, 1fr);
+    padding-bottom: 150px;
+  }
+  .le-drawer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: min(86vw, 310px);
+    max-height: none;
+    z-index: 38;
+    border-radius: 0 14px 14px 0;
+    transform: translateX(-105%);
+    transition: transform 0.18s;
+    visibility: hidden;
+    box-shadow: var(--le-shadow);
+  }
+  .le.drawer-open .le-drawer {
+    transform: none;
+    visibility: visible;
+  }
+  .le.dragging.drawer-open .le-drawer {
+    opacity: 0;
+    pointer-events: none;
+  }
+  .le .le-drawer-toggle {
+    display: none;
+  }
+  .le .le-drawer-close {
+    display: inline-block;
+  }
+  .le-inspector {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    z-index: 35;
+    max-height: 46vh;
+    border-radius: 14px 14px 0 0;
+    border-bottom: 0;
+    box-shadow: var(--le-shadow);
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    transform: translateY(105%);
+    transition: transform 0.18s;
+    visibility: hidden;
+  }
+  .le.has-sel .le-inspector {
+    transform: none;
+    visibility: visible;
+  }
+  .le .le-close-sheet {
+    display: inline-block;
+    float: right;
+    margin-left: 6px;
+  }
+}
+.le .le-drawerbtn {
+  display: none;
+}
+@media (max-width: 979px) {
+  .le .le-drawerbtn {
+    display: inline-block;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .le-inspector,
+  .le-drawer {
+    transition: none;
+  }
+}

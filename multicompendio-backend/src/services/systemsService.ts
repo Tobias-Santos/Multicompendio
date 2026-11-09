@@ -37,7 +37,7 @@ export async function loadVisibleSystem(id: string, userId: string): Promise<Rpg
   return system;
 }
 
-async function loadEditableSystem(id: string, userId: string): Promise<RpgSystem> {
+export async function loadEditableSystem(id: string, userId: string): Promise<RpgSystem> {
   const system = await loadVisibleSystem(id, userId);
   if (system.is_preconfigured || system.owner_user_id !== userId) {
     throw new ForbiddenError('Este sistema é somente para consulta e não pode ser alterado.');

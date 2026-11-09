@@ -4,6 +4,7 @@ import * as charactersController from '../controllers/charactersController';
 import * as sharing from '../controllers/sharingController';
 import * as items from '../controllers/itemsController';
 import * as pdf from '../controllers/pdfController';
+import * as layout from '../controllers/layoutController';
 
 const router = Router();
 
@@ -15,6 +16,11 @@ router.delete('/:id', controller.remove);
 router.post('/:id/attributes', controller.addAttribute);
 router.patch('/:id/attributes/:attributeId', controller.updateAttribute);
 router.delete('/:id/attributes/:attributeId', controller.removeAttribute);
+
+// Layout da ficha (v1.8)
+router.get('/:id/layout', layout.getLayout);
+router.put('/:id/layout', layout.saveLayout);
+router.delete('/:id/layout', layout.resetLayout);
 
 // Ficha em branco em PDF (v1.7)
 router.get('/:id/sheet.pdf', pdf.blankSheet);

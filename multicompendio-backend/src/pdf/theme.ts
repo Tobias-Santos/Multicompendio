@@ -20,14 +20,17 @@ export const FONT = {
   displaySemi: 'Fraunces-Semi',
 };
 
-export type Paper = 'a4' | 'letter';
+// A folha é só A4 (o layout é desenhado em milímetros nessa folha).
+export type Paper = 'a4';
 
 // Tamanhos em pontos (1 pt = 1/72 de polegada).
 export const PAPERS: Record<Paper, { width: number; height: number; label: string }> = {
   a4: { width: 595.28, height: 841.89, label: 'A4' },
-  letter: { width: 612, height: 792, label: 'Carta' },
 };
 
-export const MARGIN = 40; // margem lateral e do topo
-export const BOTTOM = 52; // espaço reservado ao rodapé
-export const GAP = 6; // espaço entre caixas
+export const MM = 72 / 25.4; // pontos em um milímetro
+export const pt = (mm: number): number => mm * MM;
+
+export const MARGIN = 10 * MM; // margem lateral e do topo: 10 mm, a mesma do layout
+export const BOTTOM = 52; // espaço reservado ao rodapé nas páginas de texto (inventário e história)
+export const GAP = 6; // espaço entre blocos

@@ -157,9 +157,12 @@ export class InventoryTable implements Row {
   }
 }
 
+// Os itens do inventário que a pessoa pode ver.
+export const visibleEntries = (inventory: Inventory): InventoryEntry[] => inventory.entries.filter((e) => e.viewable && e.name);
+
 // Seções do inventário: a tabela e os blocos dos itens (só os que a pessoa pode ver).
 export function drawInventory(flow: Flow, inventory: Inventory): void {
-  const entries = inventory.entries.filter((e) => e.viewable && e.name);
+  const entries = visibleEntries(inventory);
   if (entries.length === 0) return;
 
   flow.ensure(BAR_H + GAP + 42);

@@ -10,6 +10,11 @@ function send(res: Response, result: pdfService.PdfResult): void {
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(result.filename)}`);
   res.setHeader('Cache-Control', 'no-store');
+  // Campos cujo texto foi cortado (não coube na caixa do layout): o front avisa a pessoa depois do download.
+  if (result.cut.length > 0) {
+    res.setHeader('X-Campos-Cortados', encodeURIComponent(JSON.stringify({ total: result.cut.length, nomes: result.cut.slice(0, 8) })));
+  }
+  res.setHeader('Access-Control-Expose-Headers', 'X-Campos-Cortados, Content-Disposition');
   res.send(result.buffer);
 }
 

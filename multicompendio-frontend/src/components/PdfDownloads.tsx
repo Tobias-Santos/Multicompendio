@@ -1,12 +1,5 @@
 import { useState } from 'react';
-import {
-  DEFAULT_PDF_OPTIONS,
-  Paper,
-  PdfOptions,
-  characterPdfPath,
-  pdfFileName,
-  savePdf,
-} from '../api/pdfApi';
+import { CutFields, DEFAULT_PDF_OPTIONS, PdfOptions, characterPdfPath, pdfFileName, savePdf } from '../api/pdfApi';
 
 const STORAGE_KEY = 'multicompendio.exportacao';
 
@@ -15,52 +8,47 @@ function loadOptions(): PdfOptions {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as Partial<PdfOptions> | null;
     if (!saved) return DEFAULT_PDF_OPTIONS;
-    return {
-      paper: saved.paper === 'letter' ? 'letter' : 'a4',
-      inventory: saved.inventory !== false,
-      story: saved.story !== false,
-      hideEmpty: saved.hideEmpty === true,
-    };
+    return { inventory: saved.inventory !== false, story: saved.story !== false };
   } catch {
     return DEFAULT_PDF_OPTIONS;
   }
 }
 
-function PaperSelect({ value, onChange }: { value: Paper; onChange: (paper: Paper) => void }) {
-  return (
-    <label className="pdf-paper" title="Tamanho do papel para imprimir: A4 ou Carta.">
-      <span>Papel</span>
-      <select value={value} onChange={(e) => onChange(e.target.value as Paper)}>
-        <option value="a4">A4</option>
-        <option value="letter">Carta</option>
-      </select>
-    </label>
-  );
-}
-
-// Baixa um PDF (e mostra o erro, se der). `build` monta o endereço a partir do papel escolhido.
+// Baixa um PDF (e mostra o erro, se der; e o aviso, se algum texto foi cortado por não caber na caixa).
 function useDownload() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cut, setCut] = useState<CutFields | null>(null);
   async function run(path: string, filename: string) {
     setBusy(true);
     setError(null);
+    setCut(null);
     try {
-      await savePdf(path, filename);
+      setCut(await savePdf(path, filename));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível gerar o PDF.');
     } finally {
       setBusy(false);
     }
   }
-  return { busy, error, run };
+  return { busy, error, cut, run };
 }
 
-// Painel "Exportar PDF" da ficha do personagem: papel e o que incluir.
+function CutNotice({ cut }: { cut: CutFields }) {
+  const more = cut.total - cut.names.length;
+  return (
+    <p className="notice" role="status">
+      O PDF foi baixado, mas o texto de {cut.total === 1 ? 'um campo' : `${cut.total} campos`} não coube na caixa e foi cortado: {cut.names.join(', ')}
+      {more > 0 ? ` e mais ${more}` : ''}. Quem organiza a ficha do sistema pode aumentar essas caixas.
+    </p>
+  );
+}
+
+// Painel "Exportar PDF" da ficha do personagem: o que incluir depois da ficha.
 export function CharacterPdfPanel({ characterId, characterName }: { characterId: string; characterName: string }) {
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<PdfOptions>(loadOptions);
-  const { busy, error, run } = useDownload();
+  const { busy, error, cut, run } = useDownload();
 
   const update = (changes: Partial<PdfOptions>) => {
     const next = { ...options, ...changes };
@@ -87,18 +75,14 @@ export function CharacterPdfPanel({ characterId, characterName }: { characterId:
 
       {open && (
         <div id="painel-exportar-pdf" className="pdf-export-panel" role="group" aria-label="Opções do PDF">
-          <PaperSelect value={options.paper} onChange={(paper) => update({ paper })} />
-          <label className="checkbox" title="Inclui a tabela do inventário e o bloco de estatísticas de cada item.">
+          <p className="hint">A ficha sai como o layout do sistema manda, em papel A4.</p>
+          <label className="checkbox" title="Inclui a tabela do inventário e o bloco de estatísticas de cada item, depois da ficha.">
             <input type="checkbox" checked={options.inventory} onChange={(e) => update({ inventory: e.target.checked })} />
             Incluir inventário e blocos dos itens
           </label>
-          <label className="checkbox" title="Inclui a história de origem, em páginas próprias.">
+          <label className="checkbox" title="Inclui a história de origem, em páginas próprias, depois da ficha.">
             <input type="checkbox" checked={options.story} onChange={(e) => update({ story: e.target.checked })} />
             Incluir a história de origem
-          </label>
-          <label className="checkbox" title="Não mostra os campos que estão sem valor. Por padrão, todos aparecem, para completar à mão.">
-            <input type="checkbox" checked={options.hideEmpty} onChange={(e) => update({ hideEmpty: e.target.checked })} />
-            Ocultar campos vazios
           </label>
           <div className="pdf-export-actions">
             <button
@@ -109,6 +93,7 @@ export function CharacterPdfPanel({ characterId, characterName }: { characterId:
               {busy ? 'Gerando…' : 'Baixar PDF'}
             </button>
           </div>
+          {cut && <CutNotice cut={cut} />}
           {error && (
             <p className="error" role="alert">
               {error}
@@ -120,35 +105,13 @@ export function CharacterPdfPanel({ characterId, characterName }: { characterId:
   );
 }
 
-// Botão simples com a escolha do papel: bloco de um item e ficha em branco do sistema.
-export function SimplePdfDownload({
-  label,
-  title,
-  buildPath,
-  filename,
-}: {
-  label: string;
-  title: string;
-  buildPath: (paper: Paper) => string;
-  filename: string;
-}) {
-  const [paper, setPaper] = useState<Paper>(loadOptions().paper);
+// Botão simples: bloco de um item e ficha em branco do sistema.
+export function SimplePdfDownload({ label, title, path, filename }: { label: string; title: string; path: string; filename: string }) {
   const { busy, error, run } = useDownload();
 
   return (
     <div className="pdf-simple">
-      <PaperSelect
-        value={paper}
-        onChange={(next) => {
-          setPaper(next);
-          try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...loadOptions(), paper: next }));
-          } catch {
-            // sem armazenamento local: vale só nesta tela
-          }
-        }}
-      />
-      <button type="button" className="ghost" disabled={busy} title={title} onClick={() => void run(buildPath(paper), filename)}>
+      <button type="button" className="ghost" disabled={busy} title={title} onClick={() => void run(path, filename)}>
         {busy ? 'Gerando…' : label}
       </button>
       {error && (

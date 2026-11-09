@@ -9,6 +9,7 @@ import { CharacterPage } from './pages/CharacterPage';
 import { InvitePage } from './pages/InvitePage';
 import { ItemPage } from './pages/ItemPage';
 import { ItemCreatePage } from './pages/ItemCreatePage';
+import { LayoutEditorPage } from './pages/LayoutEditorPage';
 import { ThemeToggle } from './theme/ThemeToggle';
 import './styles.css';
 
@@ -23,6 +24,7 @@ export default function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/sistemas/:id" element={<SystemPage />} />
+          <Route path="/sistemas/:id/layout" element={<LayoutEditorPage />} />
           <Route path="/sistemas/:id/personagens/novo" element={<CharacterCreatePage />} />
           <Route path="/personagens/:id" element={<CharacterPage />} />
           <Route path="/convite/:token" element={<InvitePage />} />

@@ -1560,3 +1560,34 @@ form select:disabled {
 .pdf-simple button {
   margin: 0;
 }
+
+.notice {
+  margin: 0;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 0.92rem;
+}
+
+/* Link com a aparência de botão (ex.: "Organizar a ficha" na página do sistema) */
+a.button-link {
+  display: inline-block;
+  margin-top: 0.6rem;
+  padding: 0.55rem 1rem;
+  border-radius: 6px;
+  background: var(--accent-fill);
+  color: var(--accent-ink);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+a.button-link:hover {
+  filter: brightness(1.08);
+}
+
+.le a.le-btn-link {
+  font-size: 14px;
+  color: var(--muted);
+}

@@ -64,7 +64,7 @@ export function ItemPage() {
       <SimplePdfDownload
         label="Baixar bloco em PDF"
         title="Gera um PDF só com o bloco de estatísticas deste item, para imprimir."
-        buildPath={(paper) => itemPdfPath(item.id, paper)}
+        path={itemPdfPath(item.id)}
         filename={pdfFileName(item.name, 'bloco')}
       />
 

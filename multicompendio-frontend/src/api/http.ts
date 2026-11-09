@@ -57,11 +57,11 @@ async function failWith(res: Response, isPublic: boolean): Promise<never> {
 }
 
 // Baixa um arquivo (ex.: PDF) com a sessão da pessoa; o link direto não serviria, porque a sessão vai no cabeçalho.
-export async function requestBlob(path: string): Promise<Blob> {
+export async function requestBlob(path: string): Promise<{ blob: Blob; headers: Headers }> {
   const token = getToken();
   const res = await fetch(`${BASE_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
   if (!res.ok) return failWith(res, false);
-  return res.blob();
+  return { blob: await res.blob(), headers: res.headers };
 }
 
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
