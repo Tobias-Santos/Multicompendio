@@ -1,6 +1,8 @@
 import { CalcDef } from '../calcCore';
 
 // 'longtext' = texto de várias linhas (histórias, anotações, listas de magias)
+export const ATTRIBUTE_DATA_TYPES: readonly AttributeDataType[] = ['number', 'text', 'longtext', 'boolean', 'select', 'text_number', 'calculated'];
+
 // 'calculated' = não recebe valor: é calculado a partir de outros atributos (campo `calc`)
 // 'text_number' = número opcional (com mínimo e máximo) mais um texto de várias linhas (ex.: uma disciplina com seus pontos)
 export type AttributeDataType = 'number' | 'text' | 'longtext' | 'boolean' | 'select' | 'text_number' | 'calculated';

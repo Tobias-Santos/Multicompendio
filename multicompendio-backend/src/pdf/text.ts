@@ -84,6 +84,23 @@ export function putText(
   doc.fillColor(color).text(text, left, baseline - ascent(doc, font, size), { lineBreak: false });
 }
 
+// Maior pedaço do começo de `s` (de `min` até `max` caracteres) que ainda cabe, por busca binária: medir letra por letra
+// seria quadrático e um texto longo sem espaços (uma URL colada, por exemplo) travaria o servidor por segundos.
+// Não corta no meio de um par substituto (emoji).
+export function longestFitting(s: string, min: number, max: number, fits: (prefix: string) => boolean): number {
+  let lo = min;
+  let hi = Math.max(min, max);
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (fits(s.slice(0, mid))) lo = mid; else hi = mid - 1;
+  }
+  if (lo > min && lo < s.length) {
+    const c = s.charCodeAt(lo - 1);
+    if (c >= 0xd800 && c <= 0xdbff) lo -= 1;
+  }
+  return Math.max(min, lo);
+}
+
 // Quebra um texto simples em linhas que cabem em `width` (respeitando as quebras de linha do texto).
 export function wrapLines(doc: Doc, text: string, font: string, size: number, width: number): string[] {
   setFont(doc, font, size);
@@ -100,8 +117,7 @@ export function wrapLines(doc: Doc, text: string, font: string, size: number, wi
       line = word;
       while (doc.widthOfString(line) > width && line.length > 1) {
         // palavra maior que a linha: quebra por caracteres
-        let cut = line.length - 1;
-        while (cut > 1 && doc.widthOfString(line.slice(0, cut)) > width) cut--;
+        const cut = longestFitting(line, 1, line.length - 1, (p) => doc.widthOfString(p) <= width);
         out.push(line.slice(0, cut));
         line = line.slice(cut);
       }
@@ -153,8 +169,7 @@ export function wrapRuns(doc: Doc, runs: Run[], size: number, width: number): Se
         x = 0;
       }
       while (w > width && word.length > 1) {
-        let cut = word.length - 1;
-        while (cut > 1 && widthOf(doc, word.slice(0, cut), run.font, size) > width) cut--;
+        const cut = longestFitting(word, 1, word.length - 1, (p) => widthOf(doc, p, run.font, size) <= width);
         push(word.slice(0, cut), run.font, widthOf(doc, word.slice(0, cut), run.font, size));
         lines.push([]);
         x = 0;

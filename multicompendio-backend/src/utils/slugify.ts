@@ -10,8 +10,12 @@ export function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
 
-  return base || 'atributo';
+  // a chave tem no máximo 60 letras no banco; o corte deixa folga para o sufixo numérico de desempate ("_2", "_10"…)
+  const cut = base.slice(0, MAX_BASE).replace(/_+$/, '');
+  return cut || 'atributo';
 }
+
+const MAX_BASE = 50;
 
 // Garante que a key seja única dentro da lista de keys já existentes,
 // adicionando um sufixo numérico em caso de colisão (ex: dois nomes

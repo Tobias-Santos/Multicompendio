@@ -2,7 +2,7 @@ import { BAR, BAR_GAP, LayoutItem, LayoutSection, SHAPE_POLYGONS, SheetLayout, S
 import { CharacterValue, CharacterValues } from '../types/character';
 import { SystemAttribute } from '../types/system';
 import { COLORS, FONT, pt } from './theme';
-import { formatNumber, formatValue, putText, sanitize, widthOf, wrapLines } from './text';
+import { formatNumber, formatValue, putText, sanitize, widthOf, wrapLines, longestFitting } from './text';
 
 type Doc = PDFKit.PDFDocument;
 
@@ -49,9 +49,8 @@ function drawFrame(doc: Doc, shape: ShapeKey, x: number, y: number, w: number, h
 const baseline = (top: number, lineH: number, size: number): number => top + lineH * 0.5 + size * 0.35;
 
 function ellipsize(doc: Doc, line: string, font: string, size: number, width: number): string {
-  let t = line;
-  while (t.length > 0 && widthOf(doc, t + '…', font, size) > width) t = t.slice(0, -1);
-  return t + '…';
+  const keep = longestFitting(line, 0, line.length, (p) => widthOf(doc, p + '…', font, size) <= width);
+  return line.slice(0, keep) + '…';
 }
 
 // Corta as linhas que não cabem, terminando a última com reticências.

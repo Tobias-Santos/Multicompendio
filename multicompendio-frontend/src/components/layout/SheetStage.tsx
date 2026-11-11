@@ -11,6 +11,8 @@ import { LayoutAttribute } from '../../layoutCore';
 
 const HANDLES = ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'];
 
+// ATENÇÃO: as medidas (.le-dim, .le-sdim) e o resumo da seção (.le-sec-meta) são UM só nó de texto de propósito: o motor de arrasto
+// atualiza esse mesmo nó durante o gesto (veja setText em engine.ts). Vários nós de texto aqui fariam o React falhar ao removê-los.
 interface CardProps { item: LayoutItem; attr: LayoutAttribute; sel: boolean; over: boolean; editable: boolean }
 
 const Card = memo(function Card({ item, attr, sel, over, editable }: CardProps) {
@@ -38,7 +40,7 @@ const Card = memo(function Card({ item, attr, sel, over, editable }: CardProps) 
         <>
           <span className="le-card-grip" title="Arraste para mover" aria-hidden="true">⠿</span>
           {sel && HANDLES.map((h) => <i key={h} className="le-hd" data-h={h} aria-hidden="true" />)}
-          <span className="le-dim">{fmt(item.w)} × {fmt(item.h)} mm</span>
+          <span className="le-dim">{`${fmt(item.w)} × ${fmt(item.h)} mm`}</span>
         </>
       )}
     </div>
@@ -58,9 +60,7 @@ function Section({ sec, attrs, sel, editable, overIds, onAddNear, onDelete }: Se
       <div className="le-sec-bar" data-secbar={sec.id} {...(editable ? { tabIndex: 0, role: 'button' } : {})}>
         {editable && <span className="le-sec-grip" data-grip="sec" title="Arraste para mover a seção" aria-hidden="true">⠿</span>}
         <span className="le-sec-title">{sec.title}</span>
-        <span className="le-sec-meta">
-          {sec.items.length} {sec.items.length === 1 ? 'campo' : 'campos'}{editable ? ` · ${fmt(sec.w)} × ${fmt(sec.h)} mm` : ''}
-        </span>
+        <span className="le-sec-meta">{`${sec.items.length} ${sec.items.length === 1 ? 'campo' : 'campos'}${editable ? ` · ${fmt(sec.w)} × ${fmt(sec.h)} mm` : ''}`}</span>
         {editable && (
           <span className="le-sec-tools">
             <button type="button" title="Criar uma seção no primeiro espaço livre perto desta" aria-label={`Criar seção perto de ${sec.title}`} onClick={() => onAddNear(sec.id)}>+</button>
@@ -75,7 +75,7 @@ function Section({ sec, attrs, sel, editable, overIds, onAddNear, onDelete }: Se
         })}
       </div>
       {editable && on && HANDLES.map((h) => <i key={h} className="le-hd le-shd" data-h={h} data-sh="1" aria-hidden="true" />)}
-      <span className="le-sdim">{fmt(sec.w)} × {fmt(outerHeight(sec))} mm</span>
+      <span className="le-sdim">{`${fmt(sec.w)} × ${fmt(outerHeight(sec))} mm`}</span>
     </section>
   );
 }

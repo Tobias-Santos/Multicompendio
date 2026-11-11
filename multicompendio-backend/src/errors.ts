@@ -3,7 +3,14 @@ export class ValidationError extends Error {}    // 400
 export class UnauthorizedError extends Error {}  // 401
 export class ForbiddenError extends Error {}     // 403
 export class NotFoundError extends Error {}      // 404
-export class ConflictError extends Error {}      // 409
+export class ConflictError extends Error {}
+
+// 429: tentativas demais (login). Leva quantos segundos faltam para tentar de novo.
+export class TooManyRequestsError extends Error {
+  constructor(message: string, readonly retryAfterSeconds: number) {
+    super(message);
+  }
+}      // 409
 
 // 409 específico da história: quem gravou estava baseado numa revisão que não é mais a atual
 // (outra aba ou dispositivo gravou antes). Leva a revisão atual para o cliente decidir.

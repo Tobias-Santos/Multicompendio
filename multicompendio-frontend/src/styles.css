@@ -1612,6 +1612,16 @@ a.button-link:hover {
   color: var(--muted);
 }
 
+/* Nomes e textos longos sem espaços (uma URL colada, por exemplo) quebram dentro da própria caixa, em vez de alargar a página. */
+body { overflow-wrap: anywhere; }
+td, th, label, .info-label, h1, h2, h3, h4, p, li, summary, .card { min-width: 0; overflow-wrap: anywhere; }
+.system-list-link, .system-entry-text { min-width: 0; }
+.system-entry-text { flex: 1 1 0; }
+/* título da lista: o nome encolhe com reticências e o selo (Privado/Público) fica sempre visível */
+.system-entry-text .entry-title { display: flex; align-items: center; min-width: 0; }
+.entry-title .entry-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.entry-title .badge { flex: none; }
+
 /* ===== atributos calculados (RF14) ===== */
 .calc-builder { flex-basis: 100%; width: 100%; margin: 8px 0; container-type: inline-size; }
 .calc-lead { font-family: var(--font-display); font-size: 1.05rem; margin: 6px 0; }

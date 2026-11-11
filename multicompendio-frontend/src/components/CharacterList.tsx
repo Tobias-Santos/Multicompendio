@@ -33,8 +33,8 @@ export function CharacterList({
               {character.name.charAt(0).toUpperCase()}
             </div>
             <div className="system-entry-text">
-              <h3>
-                {character.name}
+              <h3 className="entry-title">
+                <span className="entry-name" title={character.name}>{character.name}</span>
                 {showVisibility && character.is_mine && (
                   <span className={`badge${character.is_public ? ' badge-public' : ''}`}>
                     {character.is_public ? 'Público' : 'Privado'}

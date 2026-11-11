@@ -15,6 +15,7 @@ import {
 } from '../types/character';
 
 const MAX_NAME_LENGTH = 120;
+const MAX_NUMBER = 1e12; // acima disso o JavaScript perde precisão e o PDF não tem onde mostrar
 const MAX_TEXT_LENGTH = 1000;
 const MAX_LONGTEXT_LENGTH = 5000;
 
@@ -66,6 +67,7 @@ export function validateValues(
         if (typeof raw !== 'number' || !Number.isFinite(raw)) {
           throw new ValidationError(`O campo "${attr.name}" precisa ser um número.`);
         }
+        if (Math.abs(raw) > MAX_NUMBER) throw new ValidationError(`O campo "${attr.name}" aceita números de até 1 trilhão (positivos ou negativos).`);
         // o banco devolve colunas numéricas como texto, então converte antes de comparar
         const min = attr.min_value === null ? null : Number(attr.min_value);
         const max = attr.max_value === null ? null : Number(attr.max_value);
@@ -127,6 +129,7 @@ export function validateValues(
           if (typeof part.number !== 'number' || !Number.isFinite(part.number)) {
             throw new ValidationError(`A parte numérica do campo "${attr.name}" precisa ser um número.`);
           }
+          if (Math.abs(part.number) > MAX_NUMBER) throw new ValidationError(`A parte numérica do campo "${attr.name}" aceita números de até 1 trilhão.`);
           number = part.number;
           const min = attr.min_value === null ? null : Number(attr.min_value);
           const max = attr.max_value === null ? null : Number(attr.max_value);

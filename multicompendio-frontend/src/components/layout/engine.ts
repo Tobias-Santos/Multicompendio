@@ -45,6 +45,14 @@ interface Drag {
   oy: number;
 }
 
+// O React é dono dos nós de texto das medidas: atualiza o MESMO nó (nodeValue) em vez de trocar o conteúdo (textContent).
+// Trocar o conteúdo descarta o nó que o React guarda, e depois ele falha ao atualizá-lo ou removê-lo (tela branca ao abrir a prévia).
+function setText(el: HTMLElement, text: string): void {
+  const n = el.firstChild;
+  if (n && n.nodeType === 3 && el.childNodes.length === 1) n.nodeValue = text;
+  else el.textContent = text;
+}
+
 const all = (root: HTMLElement, sel: string): HTMLElement[] => Array.from(root.querySelectorAll<HTMLElement>(sel));
 const SNAP_PX = 7;
 
@@ -55,6 +63,7 @@ export const failMessage = (note: string): string =>
 
 export function createEngine(getCtx: () => EngineCtx) {
   let drag: Drag | null = null;
+  let resizeCancel: (() => void) | null = null; // redimensionamento em andamento: Esc ou a perda do ponteiro cancelam e restauram
   let ptr = { x: 0, y: 0 };
   let raf = 0;
   let suppress = false;
@@ -354,7 +363,7 @@ export function createEngine(getCtx: () => EngineCtx) {
       card.style.top = `calc(${cur.y} * var(--mm))`;
       card.style.width = `calc(${cur.w} * var(--mm))`;
       card.style.height = `calc(${cur.h} * var(--mm))`;
-      if (dim) dim.textContent = `${fmt(cur.w)} × ${fmt(cur.h)} mm`;
+      if (dim) setText(dim, `${fmt(cur.w)} × ${fmt(cur.h)} mm`);
       bodyEl.style.setProperty('--h', String(grow.h));
       secEl.style.setProperty('--sw', String(grow.w));
       all(bodyEl, '.le-guide').forEach((n) => n.remove());
@@ -423,19 +432,26 @@ export function createEngine(getCtx: () => EngineCtx) {
       grow = { w: Math.max(origW, g.w), h: Math.max(origH, g.h) };
       paint(guides);
     };
+    let cancelled = false;
     const up = () => {
       window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', abort);
+      resizeCancel = null;
       guardClick();
       card.setAttribute('style', saved.card ?? '');
       secEl.setAttribute('style', saved.sec ?? '');
       bodyEl.setAttribute('style', saved.body ?? '');
-      if (dim) dim.textContent = saved.dim;
+      if (dim) setText(dim, saved.dim);
       all(bodyEl, '.le-guide').forEach((n) => n.remove());
-      const changed = cur.x !== start.x || cur.y !== start.y || cur.w !== start.w || cur.h !== start.h;
+      const changed = !cancelled && (cur.x !== start.x || cur.y !== start.y || cur.w !== start.w || cur.h !== start.h);
       if (changed) c.edit(`${a.name}: ${fmt(cur.w)} por ${fmt(cur.h)} mm`, (draft) => setItemRect(draft, c.attrs, id, cur), { select: { kind: 'field', id }, fail: 'Esse tamanho deixaria o campo sobre outro campo ou além do que a seção pode crescer.' });
     };
+    const abort = () => { cancelled = true; up(); };
+    resizeCancel = abort;
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up, { once: true });
+    window.addEventListener('pointercancel', abort, { once: true });
   }
 
   // ------------------------------------------------------------------ redimensionar uma seção pelas 8 alças
@@ -473,8 +489,8 @@ export function createEngine(getCtx: () => EngineCtx) {
         el.style.left = `calc(${r1(it.x - shx)} * var(--mm))`;
         el.style.top = `calc(${r1(it.y - shy)} * var(--mm))`;
       });
-      if (dimEl) dimEl.textContent = `${fmt(cur.w)} × ${fmt(BAR + BAR_GAP + cur.h)} mm`;
-      if (metaEl) metaEl.textContent = `${sec.items.length} ${sec.items.length === 1 ? 'campo' : 'campos'} · ${fmt(cur.w)} × ${fmt(cur.h)} mm`;
+      if (dimEl) setText(dimEl, `${fmt(cur.w)} × ${fmt(BAR + BAR_GAP + cur.h)} mm`);
+      if (metaEl) setText(metaEl, `${sec.items.length} ${sec.items.length === 1 ? 'campo' : 'campos'} · ${fmt(cur.w)} × ${fmt(cur.h)} mm`);
     };
     const move = (ev: PointerEvent) => {
       const alt = ev.altKey;
@@ -516,26 +532,33 @@ export function createEngine(getCtx: () => EngineCtx) {
       cur = next;
       paint();
     };
+    let cancelled = false;
     const up = () => {
       window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', abort);
+      resizeCancel = null;
       guardClick();
       secEl.setAttribute('style', saved.sec ?? '');
       bodyEl.setAttribute('style', saved.body ?? '');
       cardEls.forEach((el, i) => el.setAttribute('style', saved.cards[i] ?? ''));
-      if (dimEl) dimEl.textContent = saved.dim;
-      if (metaEl) metaEl.textContent = saved.meta;
-      const changed = cur.x !== start.x || cur.y !== start.y || cur.w !== start.w || cur.h !== start.h;
+      if (dimEl) setText(dimEl, saved.dim);
+      if (metaEl) setText(metaEl, saved.meta);
+      const changed = !cancelled && (cur.x !== start.x || cur.y !== start.y || cur.w !== start.w || cur.h !== start.h);
       if (changed) c.edit(`Seção “${sec.title}”: ${fmt(cur.w)} × ${fmt(cur.h)} mm`, (draft) => resizeSectionFrame(draft, id, cur), { select: { kind: 'sec', id }, fail: 'Esse tamanho não cabe: deixaria a seção sem espaço para os campos, sobre outra seção ou fora da folha.' });
     };
+    const abort = () => { cancelled = true; up(); };
+    resizeCancel = abort;
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up, { once: true });
+    window.addEventListener('pointercancel', abort, { once: true });
   }
 
   return {
     onPointerDown,
     consumeClickGuard: (): boolean => suppress,
-    cancel: () => { if (drag) cancel(); },
-    isDragging: (): boolean => !!drag?.active,
+    cancel: () => { if (drag) cancel(); resizeCancel?.(); },
+    isDragging: (): boolean => !!drag?.active || resizeCancel !== null,
   };
 }
 

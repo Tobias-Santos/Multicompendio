@@ -5,6 +5,8 @@ import { uniqueSlug } from '../utils/slugify';
 import {
   CreateSystemInput,
   UpdateSystemInput,
+  ATTRIBUTE_DATA_TYPES,
+  AttributeDataType,
   AttributeInput,
   RpgSystem,
   SystemAttribute,
@@ -47,10 +49,34 @@ export async function loadEditableSystem(id: string, userId: string): Promise<Rp
   return system;
 }
 
+// As opções da lista são guardadas sem espaços nas pontas.
+const trimOptions = (opts: string[] | null): string[] | null => (opts ? opts.map((o) => o.trim()) : null);
+
 function validateAttributeShape(attr: AttributeInput | Partial<AttributeInput>): void {
+  if (!ATTRIBUTE_DATA_TYPES.includes(attr.data_type as AttributeDataType)) throw new ValidationError('Tipo de atributo inválido.');
   const name = attr.name ?? 'atributo';
-  if (attr.data_type === 'select' && (!attr.options || attr.options.length === 0)) {
-    throw new ValidationError(`O atributo "${name}" é do tipo "Lista de opções" mas não tem opções definidas.`);
+  if (attr.is_required !== undefined && typeof attr.is_required !== 'boolean') {
+    throw new ValidationError(`O campo "obrigatório" do atributo "${name}" precisa ser verdadeiro ou falso.`);
+  }
+  if (attr.data_type === 'select') {
+    const opts = attr.options as unknown;
+    if (!Array.isArray(opts) || opts.length === 0) {
+      throw new ValidationError(`O atributo "${name}" é do tipo "Lista de opções" mas não tem opções definidas.`);
+    }
+    if (opts.length > 200) throw new ValidationError(`O atributo "${name}" pode ter no máximo 200 opções.`);
+    const seen = new Set<string>();
+    for (const o of opts) {
+      if (typeof o !== 'string' || !o.trim()) throw new ValidationError(`O atributo "${name}" tem uma opção vazia ou que não é texto.`);
+      if (o.trim().length > 120) throw new ValidationError(`Cada opção de "${name}" pode ter no máximo 120 letras.`);
+      const key = o.trim().toLowerCase();
+      if (seen.has(key)) throw new ValidationError(`O atributo "${name}" tem a opção "${o.trim()}" repetida.`);
+      seen.add(key);
+    }
+  }
+  for (const bound of [attr.min_value, attr.max_value]) {
+    if (bound == null) continue;
+    const n = Number(bound);
+    if (!Number.isFinite(n) || Math.abs(n) > 1e12) throw new ValidationError(`O atributo "${name}" tem um limite de valores inválido ou grande demais.`);
   }
   if (
     attr.min_value != null &&
@@ -63,10 +89,27 @@ function validateAttributeShape(attr: AttributeInput | Partial<AttributeInput>):
 
 // RF01 — cadastro do sistema. O proprietário é quem está com a sessão aberta.
 // Atributos e versão são preenchidos depois, na página do sistema.
+// Cada texto do sistema precisa ser mesmo um texto e caber no limite do banco.
+const SYSTEM_TEXT_LIMITS: Array<[string, number, string]> = [['name', 120, 'O nome'], ['language', 60, 'O idioma'], ['genre', 60, 'O gênero'], ['version', 50, 'A versão']];
+function checkSystemTexts(input: object): void {
+  const o = input as Record<string, unknown>;
+  for (const [key, max, label] of SYSTEM_TEXT_LIMITS) {
+    const v = o[key];
+    if (v === undefined || v === null) continue;
+    if (typeof v !== 'string') throw new ValidationError(`${label} precisa ser um texto.`);
+    if (v.trim().length > max) throw new ValidationError(`${label} pode ter no máximo ${max} letras.`);
+  }
+  for (const key of ['description', 'setting', 'image_url']) {
+    if (o[key] !== undefined && o[key] !== null && typeof o[key] !== 'string') throw new ValidationError('Os textos do sistema precisam ser texto.');
+  }
+  if (typeof o.image_url === 'string' && o.image_url.length > 3_000_000) throw new ValidationError('A imagem é grande demais (máximo de 2 MB).');
+}
+
 export async function registerSystem(input: CreateSystemInput, userId: string): Promise<SystemView> {
-  if (!input.name || input.name.trim().length === 0) {
+  if (typeof input?.name !== 'string' || input.name.trim().length === 0) {
     throw new ValidationError('O sistema precisa de um nome.');
   }
+  checkSystemTexts(input);
 
   const existing = await systemsRepo.findVisibleSystemByName(input.name, userId);
   if (existing) {
@@ -113,6 +156,8 @@ export async function updateSystem(
   userId: string,
 ): Promise<SystemView> {
   await loadEditableSystem(id, userId);
+  if (changes === null || typeof changes !== 'object') throw new ValidationError('Nada para alterar.');
+  checkSystemTexts(changes);
 
   const updated = await systemsRepo.updateSystemById(id, changes);
   if (!updated) throw new NotFoundError('Sistema não encontrado.');
@@ -160,6 +205,7 @@ const MAX_GROUP_NAME_LENGTH = 80;
 function normalizeGroupName(raw: string | undefined): string | undefined {
   if (raw === undefined || raw === null) return undefined;
   const group = String(raw).trim();
+  if (group.length > 80) throw new ValidationError('O nome da seção pode ter no máximo 80 letras.');
   if (group.length > MAX_GROUP_NAME_LENGTH) {
     throw new ValidationError(`O nome da seção pode ter no máximo ${MAX_GROUP_NAME_LENGTH} caracteres.`);
   }
@@ -212,7 +258,7 @@ export async function addAttribute(
   const w = FIELD_KIND[kind];
   await loadEditableSystem(systemId, userId);
 
-  if (!attr.name || !attr.name.trim()) {
+  if (typeof attr?.name !== 'string' || !attr.name.trim()) {
     throw new ValidationError(`Todo ${w.noun} precisa de um nome.`);
   }
   if (attr.data_type === 'calculated') {
@@ -231,6 +277,9 @@ export async function addAttribute(
   }
 
   const existing = await attributesRepo.listAttributesBySystem(systemId, kind);
+  if (attr.name.trim().length > 120) throw new ValidationError('O nome pode ter no máximo 120 letras.');
+  const MAX_FIELDS = kind === 'item_field' ? 60 : 300; // limita o trabalho de montar a ficha e o PDF; o D&D tem 144
+  if (existing.length >= MAX_FIELDS) throw new ValidationError(`Um sistema pode ter no máximo ${MAX_FIELDS} ${kind === 'item_field' ? 'campos de item' : 'atributos'}.`);
   const normalizedName = attr.name.trim().toLowerCase();
   if (existing.some((a) => a.name.trim().toLowerCase() === normalizedName)) {
     throw new ValidationError(`Já existe um ${w.noun} chamado "${attr.name}" neste sistema.`);
@@ -242,7 +291,7 @@ export async function addAttribute(
   return attributesRepo.insertAttribute(
     systemId,
     key,
-    { ...attr, calc, name: attr.name.trim(), group_name: normalizeGroupName(attr.group_name) },
+    { ...attr, calc, options: attr.data_type === 'select' ? trimOptions(attr.options ?? null) ?? undefined : undefined, name: attr.name.trim(), group_name: normalizeGroupName(attr.group_name) },
     kind,
   );
 }
@@ -314,6 +363,7 @@ export async function editAttribute(
   let name = current.name;
   if (changes.name !== undefined) {
     name = String(changes.name).trim();
+    if (name.length > 120) throw new ValidationError('O nome pode ter no máximo 120 letras.');
     if (!name) throw new ValidationError(`Todo ${w.noun} precisa de um nome.`);
     const siblings = await attributesRepo.listAttributesBySystem(systemId, kind);
     if (siblings.some((a) => a.id !== attributeId && a.name.trim().toLowerCase() === name.toLowerCase())) {
@@ -343,7 +393,7 @@ export async function editAttribute(
   const hasRange = newType === 'number' || newType === 'text_number';
   const min = !hasRange ? null : has('min_value') ? toNumber(changes.min_value, 'valor mínimo') : toNumber(current.min_value, 'valor mínimo');
   const max = !hasRange ? null : has('max_value') ? toNumber(changes.max_value, 'valor máximo') : toNumber(current.max_value, 'valor máximo');
-  const options = newType !== 'select' ? null : (changes.options ?? current.options ?? null);
+  const options = newType !== 'select' ? null : trimOptions(changes.options ?? current.options ?? null);
 
   let calc: CalcDef | null = null;
   if (newType === 'calculated') calc = checkCalc(has('calc') ? changes.calc : current.calc, { id: attributeId, name }, all);

@@ -1,3 +1,4 @@
+import { assertLoginAllowed, clearLoginFailures, recordLoginFailure } from '../utils/loginThrottle';
 import { createExampleCharacter } from './exampleCharacterService';
 import * as usersRepo from '../repositories/usersRepository';
 import { ConflictError, UnauthorizedError, ValidationError } from '../errors';
@@ -13,15 +14,21 @@ export interface AuthResult {
   token: string;
 }
 
+let dummy: Promise<string> | null = null;
+const dummyHash = (): Promise<string> => (dummy ??= hashPassword('senha-que-nao-existe-1'));
+
 // RF37 — cadastro
+const asText = (v: unknown): string => (typeof v === 'string' ? v : '');
+
 export async function register(input: RegisterInput): Promise<AuthResult> {
-  const name = input.name?.trim() ?? '';
-  const email = input.email?.trim().toLowerCase() ?? '';
-  const password = input.password ?? '';
+  const name = asText(input?.name).trim();
+  const email = asText(input?.email).trim().toLowerCase();
+  const password = asText(input?.password);
 
   if (!name) throw new ValidationError('Informe o seu nome.');
   if (name.length > 60) throw new ValidationError('O nome pode ter no máximo 60 letras.');
-  if (!EMAIL_PATTERN.test(email)) throw new ValidationError('Informe um e-mail válido.');
+  if (email.length > 255 || !EMAIL_PATTERN.test(email)) throw new ValidationError('Informe um e-mail válido.');
+  if (password.length > 128) throw new ValidationError('A senha pode ter no máximo 128 caracteres.');
   if (password.length < MIN_PASSWORD_LENGTH) {
     throw new ValidationError(`A senha precisa ter pelo menos ${MIN_PASSWORD_LENGTH} caracteres.`);
   }
@@ -47,15 +54,21 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
 }
 
 // RF37 — entrada
-export async function login(input: LoginInput): Promise<AuthResult> {
-  const email = input.email?.trim().toLowerCase() ?? '';
-  const password = input.password ?? '';
+export async function login(input: LoginInput, ip = 'desconhecido'): Promise<AuthResult> {
+  const email = asText(input?.email).trim().toLowerCase().slice(0, 256);
+  const password = asText(input?.password).slice(0, 129); // senhas longas demais nunca foram aceitas no cadastro
 
+  assertLoginAllowed(ip, email);
   const record = await usersRepo.findUserRecordByEmail(email);
-  const valid = record ? await verifyPassword(password, record.password_hash) : false;
+  // e-mail inexistente também gasta o tempo de uma conferência, para o tempo de resposta não revelar quais e-mails têm conta
+  const valid = record ? await verifyPassword(password, record.password_hash) : (await verifyPassword(password, await dummyHash()), false);
 
   // Mesma mensagem para e-mail inexistente e senha errada: não revela quais e-mails têm conta.
-  if (!record || !valid) throw new UnauthorizedError('E-mail ou senha incorretos.');
+  if (!record || !valid) {
+    recordLoginFailure(ip, email);
+    throw new UnauthorizedError('E-mail ou senha incorretos.');
+  }
+  clearLoginFailures(ip, email);
 
   const { password_hash: _ignored, ...user } = record;
   return { user, token: signToken(user.id) };

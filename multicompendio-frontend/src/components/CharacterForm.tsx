@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useMemo, useRef, useState } from 'react';
 import { describeCalc, evaluateAll, formatCalcNumber } from '../calcCore';
 import { toCalcAttrs } from './CalcBuilder';
 import { SystemAttribute } from '../types/system';
@@ -94,6 +94,7 @@ export function CharacterForm({
   const [fields, setFields] = useState<FieldState>(() => buildInitialState(attributes, initialValues));
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const sending = useRef(false); // trava imediata: dois envios no mesmo instante passam antes de o botão ser desativado na tela
   const [saved, setSaved] = useState(false);
 
   const sections = groupBySection(attributes);
@@ -128,6 +129,8 @@ export function CharacterForm({
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (sending.current) return;
+    sending.current = true;
     setError(null);
     setSaved(false);
 
@@ -156,6 +159,7 @@ export function CharacterForm({
     } catch (err) {
       setError(err instanceof Error ? err.message : `Não foi possível salvar o ${subject}.`);
     } finally {
+      sending.current = false;
       setSubmitting(false);
     }
   }

@@ -14,7 +14,7 @@ export async function register(req: Request, res: Response): Promise<void> {
 // POST /auth/login
 export async function login(req: Request, res: Response): Promise<void> {
   try {
-    res.json(await authService.login(req.body));
+    res.json(await authService.login(req.body, req.ip));
   } catch (err) {
     handleError(res, err);
   }
