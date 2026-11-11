@@ -45,7 +45,7 @@ export interface SystemAttribute {
   calc?: CalcDef | null; // a conta, só nos atributos calculados
 }
 
-// Payload de entrada — usado tanto na criação (RF02) quanto na edição (RF05).
+// Payload de entrada — usado tanto na criação quanto na edição de atributos (RF03).
 // Não tem `key`: a aplicação gera esse identificador automaticamente a
 // partir do nome, o usuário nunca precisa pensar nisso.
 export interface AttributeInput {
@@ -61,7 +61,7 @@ export interface AttributeInput {
   calc?: unknown; // a conta (só para o tipo calculado); o serviço confere e limpa
 }
 
-// Payload de criação — RF01. Nome, descrição e os metadados narrativos
+// Payload de criação — RF02. Nome, descrição e os metadados narrativos
 // (idioma, gênero, ambientação, imagem). Versão, proprietário e
 // pré-configurado continuam de fora — preenchidos depois, na página
 // de edição do sistema.
@@ -77,7 +77,7 @@ export interface CreateSystemInput {
 // Payload de edição das propriedades do sistema — usado na página de
 // edição, depois que o sistema já existe.
 // `is_preconfigured` e `owner_user_id` não entram aqui: o primeiro só é
-// definido pelo seed de instalação (RF04), o segundo deve ser atribuído
+// definido pelo seed de instalação (RF05), o segundo deve ser atribuído
 // automaticamente pelo backend a partir do usuário autenticado, quando
 // a autenticação existir — nunca digitado manualmente pelo usuário.
 export interface UpdateSystemInput {

@@ -7,7 +7,7 @@ const SELECT_SYSTEM = `
     FROM rpg_systems s
     LEFT JOIN users u ON u.id = s.owner_user_id`;
 
-// RF01 — cadastro: nome, descrição e metadados narrativos
+// RF02 — cadastro: nome, descrição e metadados narrativos
 // (idioma, gênero, ambientação, imagem). O proprietário é o usuário
 // autenticado — vem da sessão, nunca de um campo digitado.
 export async function insertSystem(
@@ -66,7 +66,7 @@ export async function listVisibleSystems(userId: string): Promise<RpgSystem[]> {
 //
 // Dois campos ficam de fora de propósito, porque não são escolhas do
 // usuário sobre o próprio sistema — são atribuídos pelo backend:
-//   - is_preconfigured: só é definido pelo seed de instalação (RF04).
+//   - is_preconfigured: só é definido pelo seed de instalação (RF05).
 //   - owner_user_id: atribuído na criação, a partir do usuário autenticado.
 export async function updateSystemById(
   id: string,
@@ -94,10 +94,9 @@ export async function updateSystemById(
   return findSystemById(id);
 }
 
-// RF06 — exclusão de um sistema de RPG
-// (a checagem de vínculo com personagens/campanhas — RF38 — entra quando
-// esses módulos existirem; por ora exclui direto e deixa o ON DELETE CASCADE
-// cuidar dos atributos)
+// RF04 — exclusão de um sistema de RPG. A checagem de vínculo com personagens e itens é
+// feita antes, no serviço (removeSystem); aqui o ON DELETE CASCADE leva os atributos junto
+// e o banco ainda recusa (RESTRICT) se sobrar algum vínculo.
 export async function deleteSystemById(id: string): Promise<boolean> {
   const result = await pool.query(`DELETE FROM rpg_systems WHERE id = $1`, [id]);
   return (result.rowCount ?? 0) > 0;

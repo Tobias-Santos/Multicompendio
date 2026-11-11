@@ -16,7 +16,7 @@ export function getSystem(id: string): Promise<SystemWithAttributes> {
   return request(`/systems/${id}`);
 }
 
-// RF01 — cadastro simplificado (nome + descrição)
+// RF02 — cadastro simplificado (nome + descrição)
 export function createSystem(input: CreateSystemInput): Promise<RpgSystem> {
   return request('/systems', {
     method: 'POST',
@@ -41,7 +41,7 @@ export type FieldKind = 'attribute' | 'item_field';
 const fieldPath = (systemId: string, kind: FieldKind) =>
   `/systems/${systemId}/${kind === 'item_field' ? 'item-fields' : 'attributes'}`;
 
-// RF02 + RF03 (atributos) e RF12 (campos de item) — adiciona ao sistema já existente
+// RF03 (atributos) e RF12 (campos de item) — adiciona ao sistema já existente
 export function addAttribute(systemId: string, attr: AttributeInput, kind: FieldKind = 'attribute'): Promise<SystemAttribute> {
   return request(fieldPath(systemId, kind), {
     method: 'POST',

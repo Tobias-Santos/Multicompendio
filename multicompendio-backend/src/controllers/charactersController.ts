@@ -13,7 +13,7 @@ export async function setVisibility(req: Request, res: Response): Promise<void> 
   }
 }
 
-// GET /systems/:id/characters — RF13
+// GET /systems/:id/characters — RF07
 export async function list(req: Request, res: Response): Promise<void> {
   try {
     res.json(await charactersService.listCharacters(req.params.id, userOf(req)));
@@ -22,7 +22,7 @@ export async function list(req: Request, res: Response): Promise<void> {
   }
 }
 
-// POST /systems/:id/characters — RF09, RF10, RF11, RF12
+// POST /systems/:id/characters — RF06
 export async function create(req: Request, res: Response): Promise<void> {
   try {
     res.status(201).json(await charactersService.createCharacter(req.params.id, req.body, userOf(req)));
@@ -31,7 +31,7 @@ export async function create(req: Request, res: Response): Promise<void> {
   }
 }
 
-// GET /characters/:id — RF14
+// GET /characters/:id — RF07
 export async function getOne(req: Request, res: Response): Promise<void> {
   try {
     res.json(await charactersService.getCharacter(req.params.id, userOf(req)));
@@ -40,7 +40,7 @@ export async function getOne(req: Request, res: Response): Promise<void> {
   }
 }
 
-// PUT /characters/:id — RF15, RF16
+// PUT /characters/:id — RF06
 export async function update(req: Request, res: Response): Promise<void> {
   try {
     res.json(await charactersService.updateCharacter(req.params.id, req.body, userOf(req)));

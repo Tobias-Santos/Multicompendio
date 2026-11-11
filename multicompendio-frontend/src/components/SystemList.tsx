@@ -28,11 +28,13 @@ export function SystemList({ systems, onDelete }: Props) {
               </div>
             )}
             <div className="system-entry-text">
-              <h3>
-                {system.name}
-                {system.version && <span className="muted"> — {system.version}</span>}
+              <h3 className="entry-title">
+                <span className="entry-name" title={system.name}>
+                  {system.name}
+                  {system.version && <span className="muted"> — {system.version}</span>}
+                </span>
                 {system.is_member && (
-                  <span className="badge" title="Este sistema é de outra pessoa, que o compartilhou com você.">
+                  <span className="badge badge-long" title="Este sistema é de outra pessoa, que o compartilhou com você.">
                     Compartilhado por {system.owner_name}
                   </span>
                 )}

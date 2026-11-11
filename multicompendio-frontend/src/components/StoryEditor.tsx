@@ -69,6 +69,7 @@ export function StoryEditor({ characterId, initial }: { characterId: string; ini
   const editorRef = useRef<Editor | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [readMode, setReadMode] = useState(false);
+  const [pasteNotice, setPasteNotice] = useState<string | null>(null); // colagem que não coube no limite
 
   // O controlador é criado uma vez; as funções abaixo só são chamadas depois que o editor existe.
   const [saver] = useState(
@@ -116,6 +117,21 @@ export function StoryEditor({ characterId, initial }: { characterId: string; ini
         'aria-label': 'Texto da história de origem',
         lang: 'pt-BR',
         spellcheck: 'true',
+      },
+      // O editor descarta o que passa do limite sem dizer nada: quem cola um texto grande ficaria sem entender por que nada aconteceu.
+      handlePaste: (view, event) => {
+        const text = event.clipboardData?.getData('text/plain') ?? '';
+        const room = MAX_STORY_LENGTH - view.state.doc.textContent.length;
+        if (text.length > room) {
+          setPasteNotice(
+            `O texto colado tem ${text.length.toLocaleString('pt-BR')} caracteres e a história comporta no máximo ` +
+              `${MAX_STORY_LENGTH.toLocaleString('pt-BR')} (ainda cabem ${Math.max(room, 0).toLocaleString('pt-BR')}). ` +
+              'Ele não foi inserido por completo: cole um trecho menor.',
+          );
+        } else {
+          setPasteNotice(null);
+        }
+        return false; // quem decide o que entra continua sendo o editor
       },
     },
     // só conta quando o documento realmente mudou (e não, por exemplo, ao trocar para o modo leitura)
@@ -213,6 +229,15 @@ export function StoryEditor({ characterId, initial }: { characterId: string; ini
       )}
 
       {/* fica até a pessoa dispensar: some sozinho em ~1 s seria rápido demais para ler */}
+      {pasteNotice !== null && (
+        <div className="story-banner story-banner-alert" role="alert" id="story-paste-notice">
+          <p>{pasteNotice}</p>
+          <button type="button" className="ghost" onClick={() => setPasteNotice(null)}>
+            Entendi
+          </button>
+        </div>
+      )}
+
       {initial.recoveredDraft !== null && !recoveredDismissed && (
         <div className="story-banner" role="status">
           <p>

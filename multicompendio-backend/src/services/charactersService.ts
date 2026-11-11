@@ -32,7 +32,7 @@ function isMissing(raw: unknown): boolean {
   return raw === undefined || raw === null || (typeof raw === 'string' && raw.trim() === '');
 }
 
-// RF10 — confere os valores informados contra os atributos do sistema
+// RF06 — confere os valores informados contra os atributos do sistema
 // (obrigatórios, tipo, faixa de números, opções). Devolve só o que deve ser gravado.
 export function validateValues(
   attributes: SystemAttribute[],
@@ -202,7 +202,7 @@ export async function listCharacters(systemId: string, userId: string): Promise<
   return charactersRepo.listVisibleInSystem(systemId, userId);
 }
 
-// RF14 — abre um personagem (com os atributos do sistema, para montar o formulário)
+// RF07 — abre um personagem (com os atributos do sistema, para montar o formulário)
 export async function getCharacter(id: string, userId: string): Promise<CharacterDetail> {
   const record = await loadViewableCharacter(id, userId);
   const [attributes, values] = await Promise.all([
@@ -233,13 +233,13 @@ export async function getCharacter(id: string, userId: string): Promise<Characte
   };
 }
 
-// RF09, RF10, RF11, RF12 — cria um personagem em um sistema existente
+// RF06 — cria um personagem em um sistema existente
 export async function createCharacter(
   systemId: string,
   input: CharacterInput,
   userId: string,
 ): Promise<CharacterDetail> {
-  await loadVisibleSystem(systemId, userId); // RF11: o sistema precisa existir e estar acessível
+  await loadVisibleSystem(systemId, userId); // RF06: o sistema precisa existir e estar acessível
   const name = validateName(input.name);
   const attributes = await attributesRepo.listAttributesBySystem(systemId);
   const entries = validateValues(attributes, input.values);
@@ -261,7 +261,7 @@ export async function createCharacter(
   return getCharacter(characterId, userId);
 }
 
-// RF15, RF16 — edita nome e valores e salva
+// RF06 — edita nome e valores e salva
 export async function updateCharacter(
   id: string,
   input: CharacterInput,

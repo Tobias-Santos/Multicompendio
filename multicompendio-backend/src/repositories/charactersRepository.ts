@@ -85,7 +85,7 @@ export async function deleteById(id: string): Promise<boolean> {
   return (result.rowCount ?? 0) > 0;
 }
 
-// RF38 — quantos personagens usam este sistema
+// RF04 — quantos personagens usam este sistema (a exclusão do sistema depende disso)
 export async function countBySystem(systemId: string): Promise<number> {
   const result = await pool.query<{ total: string }>(
     `SELECT count(*) AS total FROM characters WHERE system_id = $1`,

@@ -165,8 +165,8 @@ export function countStoryCharacters(doc: StoryDocument): number {
   return total;
 }
 
-// Texto puro da história, para campos que não aceitam formatação (como o campo de
-// formulário "História do Personagem" do PDF, no RF11). Um bloco por linha.
+// Texto puro da história, para onde não cabe formatação (como a história na ficha em PDF, RF10).
+// Um bloco por linha.
 export function extractPlainText(doc: StoryDocument): string {
   const blockLines = (nodes: StoryNode[]): string[] => {
     const out: string[] = [];

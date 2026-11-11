@@ -6,7 +6,7 @@ import { handleError } from '../utils/httpError';
 // sempre existe aqui.
 const userOf = (req: Request): string => req.userId as string;
 
-// POST /systems — RF01: cadastro (o proprietário é o usuário autenticado)
+// POST /systems — RF02: cadastro (o proprietário é o usuário autenticado)
 export async function create(req: Request, res: Response): Promise<void> {
   try {
     res.status(201).json(await systemsService.registerSystem(req.body, userOf(req)));
@@ -24,7 +24,7 @@ export async function update(req: Request, res: Response): Promise<void> {
   }
 }
 
-// POST /systems/:id/attributes — RF02 + RF03: adiciona um atributo ao sistema
+// POST /systems/:id/attributes — RF03: adiciona um atributo ao sistema
 export async function addAttribute(req: Request, res: Response): Promise<void> {
   try {
     res.status(201).json(await systemsService.addAttribute(req.params.id, req.body, userOf(req)));
@@ -51,7 +51,7 @@ export async function getOne(req: Request, res: Response): Promise<void> {
   }
 }
 
-// DELETE /systems/:id — RF06
+// DELETE /systems/:id — RF04
 export async function remove(req: Request, res: Response): Promise<void> {
   try {
     await systemsService.removeSystem(req.params.id, userOf(req));
@@ -71,7 +71,7 @@ export async function removeAttribute(req: Request, res: Response): Promise<void
   }
 }
 
-// PATCH /systems/:id/attributes/:attributeId — RF05
+// PATCH /systems/:id/attributes/:attributeId — RF03
 export async function updateAttribute(req: Request, res: Response): Promise<void> {
   try {
     res.json(

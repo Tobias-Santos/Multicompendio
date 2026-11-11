@@ -279,12 +279,12 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted, re
                   <tr key={attr.id}>
                     <td>{attr.name}</td>
                     {showRange && (
-                      <td>
+                      <td data-label="Mínimo / Máximo">
                         {attr.min_value ?? '—'} / {attr.max_value ?? '—'}
                       </td>
                     )}
-                    {showOptions && <td>{attr.options ? attr.options.join(', ') : '—'}</td>}
-                    <td>{showCalc ? (attr.calc ? describeCalc(attr.calc, nameOf) : '—') : attr.is_required ? 'sim' : 'não'}</td>
+                    {showOptions && <td data-label="Opções">{attr.options ? attr.options.join(', ') : '—'}</td>}
+                    <td data-label={showCalc ? 'Conta' : 'Obrigatório'}>{showCalc ? (attr.calc ? describeCalc(attr.calc, nameOf) : '—') : attr.is_required ? 'sim' : 'não'}</td>
                     {!readOnly && (
                       <td className="attribute-actions">
                         <button type="button" onClick={() => (editing ? cancelEdit() : startEdit(attr))}>

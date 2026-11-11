@@ -17,7 +17,7 @@ export interface AuthResult {
 let dummy: Promise<string> | null = null;
 const dummyHash = (): Promise<string> => (dummy ??= hashPassword('senha-que-nao-existe-1'));
 
-// RF37 — cadastro
+// RF01 — cadastro
 const asText = (v: unknown): string => (typeof v === 'string' ? v : '');
 
 export async function register(input: RegisterInput): Promise<AuthResult> {
@@ -53,7 +53,7 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
   }
 }
 
-// RF37 — entrada
+// RF01 — entrada
 export async function login(input: LoginInput, ip = 'desconhecido'): Promise<AuthResult> {
   const email = asText(input?.email).trim().toLowerCase().slice(0, 256);
   const password = asText(input?.password).slice(0, 129); // senhas longas demais nunca foram aceitas no cadastro

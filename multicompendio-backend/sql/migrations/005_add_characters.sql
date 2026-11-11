@@ -1,12 +1,12 @@
--- Migração incremental — v1.2 (personagens, RF09 a RF16, e trava do RF38).
+-- Migração incremental — v1.2 (personagens, RF06 e RF07, e trava do RF04).
 -- Roda em cima de um banco que já tem a v1.1 aplicada. Não altera dados existentes.
 
 -- ------------------------------------------------------------
--- v1.2 — Personagens (RF09 a RF16) e trava de exclusão (RF38)
+-- v1.2 — Personagens (RF06 e RF07) e trava de exclusão (RF04)
 -- ------------------------------------------------------------
 -- Um personagem pertence a um sistema e a um usuário.
 -- ON DELETE RESTRICT em system_id: o banco recusa excluir um sistema
--- que ainda tem personagens (RF38) — a aplicação checa antes e mostra
+-- que ainda tem personagens (RF04) — a aplicação checa antes e mostra
 -- uma mensagem clara, e esta regra fica como segunda barreira.
 CREATE TABLE characters (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -38,8 +38,8 @@ export function ItemList({ items, fields, onDelete, showOwner = false, emptyMess
                 {item.name.charAt(0).toUpperCase()}
               </div>
               <div className="system-entry-text">
-                <h3>
-                  {item.name}
+                <h3 className="entry-title">
+                  <span className="entry-name" title={item.name}>{item.name}</span>
                   {item.is_preinstalled ? (
                     <span className="badge" title="Já vem com o sistema pré-instalado.">Pré-instalado</span>
                   ) : (

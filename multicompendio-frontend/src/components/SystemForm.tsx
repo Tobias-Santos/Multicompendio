@@ -8,7 +8,7 @@ interface Props {
   onCreated: (system: RpgSystem) => void;
 }
 
-// RF01 — cadastro: nome, descrição e metadados narrativos (idioma,
+// RF02 — cadastro: nome, descrição e metadados narrativos (idioma,
 // gênero, ambientação, imagem). Versão, proprietário, pré-configurado
 // e atributos ficam para a página de edição do sistema.
 export function SystemForm({ onCreated }: Props) {

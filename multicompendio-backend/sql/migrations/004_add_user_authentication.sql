@@ -1,4 +1,4 @@
--- Migração incremental — v1.1 (RF37: cadastro e entrada de usuários).
+-- Migração incremental — v1.1 (RF01: cadastro e entrada de usuários).
 -- Roda em cima de um banco que já tem o schema da v1.0 aplicado.
 -- Não apaga dados de sistemas.
 

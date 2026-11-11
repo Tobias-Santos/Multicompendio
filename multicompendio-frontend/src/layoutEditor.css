@@ -1174,3 +1174,16 @@
     transition: none;
   }
 }
+
+/* celular e tablet: o topo não espreme o botão de salvar nem o link de voltar */
+@media (max-width: 979px) {
+  .le-right { margin-left: 0; width: 100%; flex-wrap: wrap; }
+  .le-right .le-status { white-space: normal; flex: 1 1 100%; }
+  .le-right .le-btn, .le-btn-link { flex: none; white-space: nowrap; }
+}
+/* tela de toque: os botões da barra da seção (+ e ✕) têm só uns 16 px, porque acompanham a escala da folha, e a barra corta qualquer área de toque maior.
+   O painel de opções da seção selecionada tem as mesmas ações (criar outra e remover), em botões grandes: no toque, usa-se o painel. */
+@media (pointer: coarse) {
+  .le .le-sec-tools { display: none; }
+  .le-btn-link { min-height: 38px; display: inline-flex; align-items: center; }
+}

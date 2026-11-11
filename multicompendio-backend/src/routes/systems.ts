@@ -38,7 +38,7 @@ router.post('/:id/sharing/invite', sharing.createInvite);
 router.delete('/:id/sharing/invite', sharing.disableInvite);
 router.delete('/:id/membership', sharing.leave);
 
-// Personagens de um sistema (RF09 a RF14)
+// Personagens de um sistema (RF06 e RF07)
 router.get('/:id/characters', charactersController.list);
 router.post('/:id/characters', charactersController.create);
 

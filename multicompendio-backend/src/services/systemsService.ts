@@ -19,7 +19,7 @@ import { CalcDef, dependentsOf, isNumericType } from '../calcCore';
 import { checkCalc, toCalcAttrs } from './calcSupport';
 
 // ------------------------------------------------------------------
-// Posse e permissões (RF37):
+// Posse e permissões (RF01, RF04 e RF15):
 //  - o usuário vê os sistemas pré-configurados, os que ele criou e os em que entrou por convite;
 //  - só o proprietário altera ou exclui o que é dele (quem entrou por convite só consulta e cria
 //    personagens);
@@ -87,7 +87,7 @@ function validateAttributeShape(attr: AttributeInput | Partial<AttributeInput>):
   }
 }
 
-// RF01 — cadastro do sistema. O proprietário é quem está com a sessão aberta.
+// RF02 — cadastro do sistema. O proprietário é quem está com a sessão aberta.
 // Atributos e versão são preenchidos depois, na página do sistema.
 // Cada texto do sistema precisa ser mesmo um texto e caber no limite do banco.
 const SYSTEM_TEXT_LIMITS: Array<[string, number, string]> = [['name', 120, 'O nome'], ['language', 60, 'O idioma'], ['genre', 60, 'O gênero'], ['version', 50, 'A versão']];
@@ -169,7 +169,7 @@ function countOf(total: number, singular: string, plural: string): string {
   return `${total} ${total === 1 ? singular : plural}`;
 }
 
-// RF06 + RF38 — só exclui um sistema que não tem personagens
+// RF04 — só exclui um sistema que não tem personagens nem itens
 export async function removeSystem(id: string, userId: string): Promise<void> {
   await loadEditableSystem(id, userId);
 
@@ -212,7 +212,7 @@ function normalizeGroupName(raw: string | undefined): string | undefined {
   return group;
 }
 
-// RF02 + RF03 — adiciona um atributo a um sistema já existente,
+// RF03 — adiciona um atributo a um sistema já existente,
 // validando a consistência mínima daquele atributo antes de gravar.
 //
 // A `key` (identificador técnico interno) é gerada aqui automaticamente
@@ -248,7 +248,7 @@ const FIELD_KIND = {
   },
 };
 
-// RF02 + RF03 (atributos de personagem) e RF12 (campos de item): adiciona ao sistema
+// RF03 (atributos de personagem) e RF12 (campos de item): adiciona ao sistema
 export async function addAttribute(
   systemId: string,
   attr: AttributeInput,

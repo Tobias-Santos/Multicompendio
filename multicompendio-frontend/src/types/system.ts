@@ -53,7 +53,7 @@ export interface AttributeInput {
   display_order?: number;
 }
 
-// RF01 — cadastro: nome, descrição e metadados narrativos.
+// RF02 — cadastro: nome, descrição e metadados narrativos.
 export interface CreateSystemInput {
   name: string;
   description?: string;
@@ -65,7 +65,7 @@ export interface CreateSystemInput {
 
 // Edição das demais propriedades, feita na página do sistema.
 // is_preconfigured e owner_user_id não entram aqui: o primeiro só é
-// definido pelo seed de instalação (RF04), o segundo será atribuído
+// definido pelo seed de instalação (RF05), o segundo será atribuído
 // automaticamente pelo backend quando a autenticação existir.
 export interface UpdateSystemInput {
   description?: string;

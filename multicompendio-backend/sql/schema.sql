@@ -1,6 +1,6 @@
 -- ============================================================
 -- Multicompêndio — Schema: Módulo de Sistemas de RPG (v1.0)
--- Cobre: RF01, RF02, RF03, RF05, RF06
+-- Cobre: RF02, RF03 e RF04
 -- ============================================================
 
 -- Tipo de dado que um atributo de sistema pode assumir.
@@ -8,7 +8,7 @@
 CREATE TYPE attribute_data_type AS ENUM ('number', 'text', 'longtext', 'boolean', 'select', 'text_number', 'calculated');
 
 -- ------------------------------------------------------------
--- RF37 — Usuários (cadastro e entrada na aplicação)
+-- RF01 — Usuários (cadastro e entrada na aplicação)
 -- `name` é o nome de exibição (pode repetir entre pessoas);
 -- o e-mail é o identificador de acesso e é único.
 -- A senha nunca é guardada em texto: só o hash (scrypt).
@@ -24,20 +24,20 @@ CREATE TABLE users (
 CREATE UNIQUE INDEX users_email_unique ON users (lower(email));
 
 -- ------------------------------------------------------------
--- RF01 — Cadastro de um sistema de RPG
--- RF06 — Exclusão de um sistema de RPG
+-- RF02 — Cadastro de um sistema de RPG
+-- RF04 — Exclusão de um sistema de RPG
 -- ------------------------------------------------------------
 CREATE TABLE rpg_systems (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name            VARCHAR(120) NOT NULL,
     description     TEXT,
-    owner_user_id   UUID REFERENCES users(id) ON DELETE SET NULL, -- null nos sistemas pré-configurados (RF04)
+    owner_user_id   UUID REFERENCES users(id) ON DELETE SET NULL, -- null nos sistemas pré-configurados (RF05)
     version         VARCHAR(50),                                  -- ex: "5e", "1.0", "Revisado 2024"
     language        VARCHAR(60),                                  -- ex: "Português", "Inglês"
     genre           VARCHAR(60),                                  -- ex: "Fantasia", "Terror", "Ficção científica"
     setting         TEXT,                                         -- ambientação/cenário do sistema
     image_url       TEXT,                                         -- URL de uma imagem de capa
-    is_preconfigured BOOLEAN NOT NULL DEFAULT FALSE, -- suporte futuro ao RF04
+    is_preconfigured BOOLEAN NOT NULL DEFAULT FALSE, -- sistema pré-instalado (RF05)
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
@@ -49,8 +49,8 @@ CREATE UNIQUE INDEX rpg_systems_owner_name_unique ON rpg_systems (owner_user_id,
 CREATE INDEX idx_rpg_systems_owner_user_id ON rpg_systems(owner_user_id);
 
 -- ------------------------------------------------------------
--- RF02 — Configuração de atributos específicos de cada sistema
--- RF05 — Edição de atributos específicos do sistema
+-- RF03 — Configuração de atributos específicos de cada sistema
+-- RF03 — Edição de atributos específicos do sistema
 -- ------------------------------------------------------------
 CREATE TABLE system_attributes (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -81,7 +81,7 @@ CREATE TABLE system_attributes (
 CREATE INDEX idx_system_attributes_system_id ON system_attributes(system_id);
 
 -- ------------------------------------------------------------
--- RF03 — Consistência mínima do sistema antes do cadastro
+-- RF02 — Consistência mínima do sistema antes do cadastro
 -- ------------------------------------------------------------
 -- A regra "todo sistema precisa de pelo menos 1 atributo configurado"
 -- não é expressável como constraint simples de linha (depende de uma
@@ -139,11 +139,11 @@ BEFORE UPDATE ON system_attributes
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 -- ------------------------------------------------------------
--- v1.2 — Personagens (RF09 a RF16) e trava de exclusão (RF38)
+-- v1.2 — Personagens (RF06 e RF07) e trava de exclusão (RF04)
 -- ------------------------------------------------------------
 -- Um personagem pertence a um sistema e a um usuário.
 -- ON DELETE RESTRICT em system_id: o banco recusa excluir um sistema
--- que ainda tem personagens (RF38) — a aplicação checa antes e mostra
+-- que ainda tem personagens (RF04) — a aplicação checa antes e mostra
 -- uma mensagem clara, e esta regra fica como segunda barreira.
 CREATE TABLE characters (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),

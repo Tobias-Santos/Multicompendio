@@ -66,7 +66,7 @@ export async function findAttributeById(
   return result.rows[0] ?? null;
 }
 
-// RF05 — edição de atributos específicos do sistema
+// RF03 — edição de atributos específicos do sistema
 // Grava o atributo já mesclado pelo serviço (todos os campos explícitos, então limites e opções
 // podem ser tirados). group_name: indefinido mantém a seção; texto vazio tira o atributo da seção.
 export interface AttributeUpdate {
