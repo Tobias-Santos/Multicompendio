@@ -1,6 +1,9 @@
+import { CalcDef } from '../calcCore';
+
 // 'longtext' = texto de várias linhas (histórias, anotações, listas de magias)
+// 'calculated' = não recebe valor: é calculado a partir de outros atributos (campo `calc`)
 // 'text_number' = número opcional (com mínimo e máximo) mais um texto de várias linhas (ex.: uma disciplina com seus pontos)
-export type AttributeDataType = 'number' | 'text' | 'longtext' | 'boolean' | 'select' | 'text_number';
+export type AttributeDataType = 'number' | 'text' | 'longtext' | 'boolean' | 'select' | 'text_number' | 'calculated';
 
 export interface RpgSystem {
   id: string;
@@ -37,6 +40,7 @@ export interface SystemAttribute {
   options: string[] | null;
   is_required: boolean;
   display_order: number;
+  calc?: CalcDef | null; // a conta, só nos atributos calculados
 }
 
 // Payload de entrada — usado tanto na criação (RF02) quanto na edição (RF05).
@@ -52,6 +56,7 @@ export interface AttributeInput {
   options?: string[];
   is_required?: boolean;
   display_order?: number;
+  calc?: unknown; // a conta (só para o tipo calculado); o serviço confere e limpa
 }
 
 // Payload de criação — RF01. Nome, descrição e os metadados narrativos

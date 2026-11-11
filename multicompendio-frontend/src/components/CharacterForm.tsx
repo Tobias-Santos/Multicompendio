@@ -1,4 +1,6 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
+import { describeCalc, evaluateAll, formatCalcNumber } from '../calcCore';
+import { toCalcAttrs } from './CalcBuilder';
 import { SystemAttribute } from '../types/system';
 import { CharacterInput, CharacterValues } from '../types/character';
 import { groupBySection } from '../constants/attributeTypes';
@@ -95,6 +97,16 @@ export function CharacterForm({
   const [saved, setSaved] = useState(false);
 
   const sections = groupBySection(attributes);
+
+  // Atributos calculados: recalculados a cada digitação, com o mesmo código do servidor.
+  const calculated = useMemo(() => {
+    const input: Record<string, unknown> = {};
+    for (const a of attributes) {
+      if (a.data_type === 'number') input[a.id] = fields[a.id];
+      else if (a.data_type === 'boolean') input[a.id] = fields[a.id] === true;
+    }
+    return evaluateAll(toCalcAttrs(attributes), input);
+  }, [attributes, fields]);
   const hasSections = sections.some((s) => s.section !== '');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     const open: Record<string, boolean> = {};
@@ -122,6 +134,7 @@ export function CharacterForm({
     // Só envia o que foi preenchido; campos vazios ficam de fora.
     const values: CharacterValues = {};
     for (const attr of attributes) {
+      if (attr.data_type === 'calculated') continue; // não recebe valor: é calculado
       const raw = fields[attr.id];
       if (attr.data_type === 'boolean') {
         values[attr.id] = raw === true;
@@ -151,6 +164,20 @@ export function CharacterForm({
     const label = attr.is_required ? `${attr.name} *` : attr.name;
     const value = fields[attr.id];
     const wide = attr.data_type === 'longtext' ? 'field-wide' : undefined;
+
+    // Calculado: só leitura, recalculado ao vivo.
+    if (attr.data_type === 'calculated') {
+      const v = calculated.values[attr.id];
+      const sentence = attr.calc ? describeCalc(attr.calc, (id) => attributes.find((a) => a.id === id)?.name ?? '?') : 'Calculado a partir de outros atributos.';
+      return (
+        <div key={attr.id} className="field-calculated" role="group" aria-label={`${attr.name} (calculado)`} data-sentence={sentence}>
+          <span className="calc-label"><InfoLabel text={attr.name} info={sentence} /><span className="calc-badge" aria-hidden="true">ƒ</span></span>
+          <output className={`calc-value${v === null || v === undefined ? ' empty' : ''}`} data-calc={attr.id}>
+            {v === null || v === undefined ? (calculated.div0[attr.id] ? 'divisão por zero' : '—') : formatCalcNumber(v)}
+          </output>
+        </div>
+      );
+    }
 
     // Texto com número: o número fica pequeno ao lado do nome e o texto, em uma área maior embaixo.
     if (attr.data_type === 'text_number') {

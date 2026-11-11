@@ -201,6 +201,7 @@ export function SystemPage() {
                 <AddAttributeForm
                   systemId={id}
                   onAdded={reload}
+                  attributes={data.attributes}
                   sections={Array.from(
                     new Set(data.attributes.map((a) => a.group_name).filter((g): g is string => !!g)),
                   )}

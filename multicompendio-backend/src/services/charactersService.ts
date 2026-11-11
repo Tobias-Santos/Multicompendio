@@ -1,4 +1,5 @@
 import { pool } from '../db/pool';
+import { computedFor } from './calcSupport';
 import * as charactersRepo from '../repositories/charactersRepository';
 import * as attributesRepo from '../repositories/attributesRepository';
 import * as sharingRepo from '../repositories/sharingRepository';
@@ -48,6 +49,12 @@ export function validateValues(
 
   for (const attr of attributes) {
     const raw = input[attr.id];
+
+    // o atributo calculado não recebe valor: é calculado a partir dos outros
+    if (attr.data_type === 'calculated') {
+      if (!isMissing(raw)) throw new ValidationError(`O campo "${attr.name}" é calculado e não recebe valor.`);
+      continue;
+    }
 
     if (isMissing(raw)) {
       if (attr.is_required) throw new ValidationError(`O campo "${attr.name}" é obrigatório.`);
@@ -200,6 +207,10 @@ export async function getCharacter(id: string, userId: string): Promise<Characte
     charactersRepo.getValues(id),
   ]);
 
+  // Valores antigos digitados num campo que depois virou calculado ficam no banco, mas não valem: o campo é calculado.
+  const calculatedIds = new Set(attributes.filter((x) => x.data_type === 'calculated').map((x) => x.id));
+  const cleanValues: CharacterValues = Object.fromEntries(Object.entries(values).filter(([id]) => !calculatedIds.has(id)));
+
   return {
     character: {
       id: record.id,
@@ -214,7 +225,8 @@ export async function getCharacter(id: string, userId: string): Promise<Characte
       updated_at: record.updated_at,
     },
     attributes,
-    values,
+    values: cleanValues,
+    computed: computedFor(attributes, cleanValues),
   };
 }
 

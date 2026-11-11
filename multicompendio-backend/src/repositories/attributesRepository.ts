@@ -1,4 +1,5 @@
 import { pool } from '../db/pool';
+import { CalcDef } from '../calcCore';
 import { AttributeInput, SystemAttribute } from '../types/system';
 
 // Os campos dos itens têm o mesmo formato dos atributos de personagem e ficam em outra tabela;
@@ -18,10 +19,11 @@ export async function insertAttribute(
   attr: AttributeInput,
   kind: FieldKind = 'attribute',
 ): Promise<SystemAttribute> {
+  const withCalc = kind === 'attribute'; // a conta só existe nos atributos de personagem
   const result = await pool.query<SystemAttribute>(
     `INSERT INTO ${TABLE[kind]}
-       (system_id, key, name, group_name, data_type, default_value, min_value, max_value, options, is_required, display_order)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       (system_id, key, name, group_name, data_type, default_value, min_value, max_value, options, is_required, display_order${withCalc ? ', calc' : ''})
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11${withCalc ? ', $12::jsonb' : ''})
      RETURNING *`,
     [
       systemId,
@@ -35,6 +37,7 @@ export async function insertAttribute(
       attr.options ? JSON.stringify(attr.options) : null,
       attr.is_required ?? false,
       attr.display_order ?? 0,
+      ...(withCalc ? [attr.calc ? JSON.stringify(attr.calc) : null] : []),
     ],
   );
   return result.rows[0];
@@ -76,6 +79,7 @@ export interface AttributeUpdate {
   is_required: boolean;
   display_order: number;
   group_name?: string;
+  calc?: CalcDef | null; // só nos atributos de personagem
 }
 
 export async function updateAttribute(
@@ -83,8 +87,9 @@ export async function updateAttribute(
   fields: AttributeUpdate,
   kind: FieldKind = 'attribute',
 ): Promise<SystemAttribute | null> {
+  const withCalc = kind === 'attribute';
   const result = await pool.query<SystemAttribute>(
-    `UPDATE ${TABLE[kind]} SET
+    `UPDATE ${TABLE[kind]} SET${withCalc ? '\n       calc          = $11::jsonb,' : ''}
        name          = $2,
        data_type     = $3,
        default_value = $4,
@@ -107,6 +112,7 @@ export async function updateAttribute(
       fields.is_required,
       fields.display_order,
       fields.group_name ?? null,
+      ...(withCalc ? [fields.calc ? JSON.stringify(fields.calc) : null] : []),
     ],
   );
   return result.rows[0] ?? null;

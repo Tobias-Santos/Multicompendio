@@ -1,6 +1,8 @@
+import { CalcDef } from '../calcCore';
+
 // 'longtext' = texto de várias linhas (histórias, anotações, listas de magias)
 // 'text_number' = número opcional (com mínimo e máximo) mais um texto de várias linhas (ex.: uma disciplina com seus pontos)
-export type AttributeDataType = 'number' | 'text' | 'longtext' | 'boolean' | 'select' | 'text_number';
+export type AttributeDataType = 'number' | 'text' | 'longtext' | 'boolean' | 'select' | 'text_number' | 'calculated';
 
 export interface RpgSystem {
   id: string;
@@ -27,6 +29,7 @@ export interface SystemAttribute {
   name: string;
   group_name: string | null; // seção da ficha em que o atributo aparece (ex.: "Combate")
   data_type: AttributeDataType;
+  calc?: CalcDef | null; // a conta, só nos atributos calculados
   default_value: string | null;
   min_value: number | null;
   max_value: number | null;
@@ -41,6 +44,7 @@ export interface AttributeInput {
   name: string;
   group_name?: string; // seção (opcional); texto vazio remove o atributo da seção
   data_type: AttributeDataType;
+  calc?: CalcDef | null; // só para o tipo calculado
   default_value?: string;
   min_value?: number | null; // nulo, na edição, tira o limite
   max_value?: number | null;

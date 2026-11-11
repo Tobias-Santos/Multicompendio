@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { AttributeDataType, AttributeInput } from '../types/system';
+import { AttributeDataType, AttributeInput, SystemAttribute } from '../types/system';
+import { CalcBuilder, calcProblem } from './CalcBuilder';
 import { addAttribute, FieldKind } from '../api/systemsApi';
 import {
   ATTRIBUTE_NAME_EXAMPLES,
-  ATTRIBUTE_TYPE_LABELS,
-  ATTRIBUTE_TYPE_ORDER,
+  ATTRIBUTE_TYPE_OPTION_LABELS,
+  typesFor,
   ITEM_FIELD_NAME_EXAMPLES,
   hasNumberRange,
 } from '../constants/attributeTypes';
@@ -17,9 +18,10 @@ interface Props {
   onAdded: () => void;
   sections?: string[]; // seções que o sistema já tem, sugeridas ao digitar
   kind?: FieldKind; // 'item_field': campos dos itens (sem seções)
+  attributes?: SystemAttribute[]; // os atributos do sistema (o construtor da conta escolhe entre eles)
 }
 
-export function AddAttributeForm({ systemId, onAdded, sections = [], kind = 'attribute' }: Props) {
+export function AddAttributeForm({ systemId, onAdded, sections = [], kind = 'attribute', attributes = [] }: Props) {
   const isItem = kind === 'item_field';
   const [attr, setAttr] = useState<AttributeInput>({ ...empty });
   const [optionsText, setOptionsText] = useState('');
@@ -33,11 +35,17 @@ export function AddAttributeForm({ systemId, onAdded, sections = [], kind = 'att
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (attr.data_type === 'calculated') {
+      const problem = calcProblem(attr.calc ?? null, attributes, { id: '__novo__', name: attr.name });
+      if (problem) { setError(problem); return; }
+    }
     setSubmitting(true);
     try {
       // só envia o que faz sentido para o tipo escolhido (faixa para números, opções para listas)
       await addAttribute(systemId, {
         ...attr,
+        calc: attr.data_type === 'calculated' ? attr.calc : undefined,
+        is_required: attr.data_type === 'calculated' ? false : attr.is_required,
         min_value: hasNumberRange(attr.data_type) ? attr.min_value : undefined,
         max_value: hasNumberRange(attr.data_type) ? attr.max_value : undefined,
         options:
@@ -73,13 +81,14 @@ export function AddAttributeForm({ systemId, onAdded, sections = [], kind = 'att
         />
       )}
       <select
+        className={attr.data_type === 'calculated' ? 'attr-type-wide' : undefined}
         value={attr.data_type}
         title={isItem ? 'Tipo de valor que este campo vai guardar.' : 'Tipo de valor que este atributo vai guardar. "Texto com número" guarda um número (opcional, com mínimo e máximo) e um texto.'}
         onChange={(e) => update({ data_type: e.target.value as AttributeDataType })}
       >
-        {ATTRIBUTE_TYPE_ORDER.map((type) => (
+        {typesFor(isItem).map((type) => (
           <option key={type} value={type}>
-            {ATTRIBUTE_TYPE_LABELS[type]}
+            {ATTRIBUTE_TYPE_OPTION_LABELS[type]}
           </option>
         ))}
       </select>
@@ -112,14 +121,20 @@ export function AddAttributeForm({ systemId, onAdded, sections = [], kind = 'att
         />
       )}
 
-      <label className="checkbox" title="Marque se o preenchimento deste atributo for obrigatório.">
-        <input
-          type="checkbox"
-          checked={attr.is_required ?? false}
-          onChange={(e) => update({ is_required: e.target.checked })}
-        />
-        obrigatório
-      </label>
+      {attr.data_type !== 'calculated' && (
+        <label className="checkbox" title="Marque se o preenchimento deste atributo for obrigatório.">
+          <input
+            type="checkbox"
+            checked={attr.is_required ?? false}
+            onChange={(e) => update({ is_required: e.target.checked })}
+          />
+          obrigatório
+        </label>
+      )}
+
+      {attr.data_type === 'calculated' && (
+        <CalcBuilder value={attr.calc ?? null} onChange={(calc) => update({ calc })} attributes={attributes} selfId="__novo__" selfName={attr.name} />
+      )}
 
       <button type="submit" disabled={submitting}>
         {submitting ? 'Adicionando...' : isItem ? '+ adicionar campo' : '+ adicionar atributo'}

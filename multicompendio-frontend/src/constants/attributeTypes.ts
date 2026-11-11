@@ -10,9 +10,16 @@ export const ATTRIBUTE_TYPE_LABELS: Record<AttributeDataType, string> = {
   boolean: 'Verdadeiro ou falso',
   select: 'Lista de opções',
   text_number: 'Texto com número',
+  calculated: 'Calculado',
 };
 
-export const ATTRIBUTE_TYPE_ORDER: AttributeDataType[] = ['number', 'text', 'longtext', 'text_number', 'boolean', 'select'];
+// No seletor de tipo, o calculado tem um nome que se explica sozinho.
+export const ATTRIBUTE_TYPE_OPTION_LABELS: Record<AttributeDataType, string> = { ...ATTRIBUTE_TYPE_LABELS, calculated: 'Calculado a partir de outros' };
+
+export const ATTRIBUTE_TYPE_ORDER: AttributeDataType[] = ['number', 'text', 'longtext', 'text_number', 'boolean', 'select', 'calculated'];
+
+// Os campos dos itens não têm o tipo calculado.
+export const typesFor = (isItem: boolean): AttributeDataType[] => ATTRIBUTE_TYPE_ORDER.filter((t) => !isItem || t !== 'calculated');
 
 // Tipos que têm uma parte numérica, com mínimo e máximo.
 export const hasNumberRange = (type: AttributeDataType) => type === 'number' || type === 'text_number';
@@ -26,6 +33,7 @@ export const ATTRIBUTE_NAME_EXAMPLES: Record<AttributeDataType, string> = {
   boolean: 'Possui armadura',
   select: 'Classe',
   text_number: 'Disciplina',
+  calculated: 'Modificador de Força',
 };
 
 // Exemplos de nome para os campos dos itens (o que os itens de um sistema têm).
@@ -36,6 +44,7 @@ export const ITEM_FIELD_NAME_EXAMPLES: Record<AttributeDataType, string> = {
   boolean: 'É mágico',
   select: 'Raridade',
   text_number: 'Encantamento',
+  calculated: 'Total',
 };
 
 // Agrupa atributos por seção, na ordem em que cada seção aparece pela primeira vez.

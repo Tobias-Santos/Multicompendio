@@ -26,7 +26,7 @@ export function SectionField({ value, onChange, sections, placeholder = 'Seção
           if (e.target.value) onChange(e.target.value);
         }}
       >
-        <option value="">{sections.length === 0 ? 'Sem seções' : 'Seções existentes…'}</option>
+        <option value="">{sections.length === 0 ? 'Sem seções' : 'Escolher…'}</option>
         {sections.map((section) => (
           <option key={section} value={section}>
             {section}

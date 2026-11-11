@@ -13,6 +13,8 @@ import {
 import * as sharingRepo from '../repositories/sharingRepository';
 import * as itemsRepo from '../repositories/itemsRepository';
 import { ConflictError, ForbiddenError, NotFoundError, ValidationError } from '../errors';
+import { CalcDef, dependentsOf, isNumericType } from '../calcCore';
+import { checkCalc, toCalcAttrs } from './calcSupport';
 
 // ------------------------------------------------------------------
 // Posse e permissões (RF37):
@@ -213,6 +215,11 @@ export async function addAttribute(
   if (!attr.name || !attr.name.trim()) {
     throw new ValidationError(`Todo ${w.noun} precisa de um nome.`);
   }
+  if (attr.data_type === 'calculated') {
+    if (kind === 'item_field') throw new ValidationError('Os campos dos itens não podem ser calculados.');
+    // o atributo calculado não recebe valor: sem obrigatoriedade, faixa nem opções
+    attr = { ...attr, is_required: false, min_value: undefined, max_value: undefined, options: undefined, default_value: undefined };
+  }
   validateAttributeShape(attr);
 
   // Um campo obrigatório novo deixaria sem ele o que já existe (inclusive de outras pessoas, quando
@@ -230,11 +237,12 @@ export async function addAttribute(
   }
 
   const key = uniqueSlug(attr.name, existing.map((a) => a.key));
+  const calc = attr.data_type === 'calculated' ? checkCalc(attr.calc, { id: '__novo__', name: attr.name.trim() }, existing) : null;
 
   return attributesRepo.insertAttribute(
     systemId,
     key,
-    { ...attr, name: attr.name.trim(), group_name: normalizeGroupName(attr.group_name) },
+    { ...attr, calc, name: attr.name.trim(), group_name: normalizeGroupName(attr.group_name) },
     kind,
   );
 }
@@ -255,6 +263,12 @@ export async function removeAttribute(
     throw new ConflictError(
       `O ${w.noun} "${current.name}" não pode ser excluído porque ${countOf(inUse, w.uses[0], w.uses[1])} esse ${w.noun}.`,
     );
+  }
+  if (kind === 'attribute') {
+    const users = dependentsOf(attributeId, toCalcAttrs(await attributesRepo.listAttributesBySystem(systemId, kind)));
+    if (users.length > 0) {
+      throw new ConflictError(`O atributo "${current.name}" não pode ser excluído porque é usado na conta de ${users.map((u) => `"${u.name}"`).join(', ')}.`);
+    }
   }
 
   try {
@@ -281,6 +295,14 @@ export async function editAttribute(
 
   const newType = changes.data_type ?? current.data_type;
   const typeChanged = newType !== current.data_type;
+  if (kind === 'item_field' && newType === 'calculated') throw new ValidationError('Os campos dos itens não podem ser calculados.');
+  const all = kind === 'attribute' ? await attributesRepo.listAttributesBySystem(systemId, kind) : [];
+  if (typeChanged && kind === 'attribute') {
+    const users = dependentsOf(attributeId, toCalcAttrs(all));
+    if (users.length > 0 && !isNumericType(newType)) {
+      throw new ConflictError(`O tipo do atributo "${current.name}" não pode ser alterado porque ele é usado na conta de ${users.map((u) => `"${u.name}"`).join(', ')}.`);
+    }
+  }
   const inUse = await w.countValues(attributeId);
 
   if (typeChanged && inUse > 0) {
@@ -300,7 +322,7 @@ export async function editAttribute(
   }
 
   // Tornar obrigatório um campo existente só vale se tudo o que já existe o preenche.
-  const isRequired = changes.is_required ?? current.is_required;
+  const isRequired = newType === 'calculated' ? false : (changes.is_required ?? current.is_required);
   if (isRequired && !current.is_required) {
     const total = await w.countRecords(systemId);
     if (total > 0 && inUse < total) {
@@ -322,6 +344,9 @@ export async function editAttribute(
   const min = !hasRange ? null : has('min_value') ? toNumber(changes.min_value, 'valor mínimo') : toNumber(current.min_value, 'valor mínimo');
   const max = !hasRange ? null : has('max_value') ? toNumber(changes.max_value, 'valor máximo') : toNumber(current.max_value, 'valor máximo');
   const options = newType !== 'select' ? null : (changes.options ?? current.options ?? null);
+
+  let calc: CalcDef | null = null;
+  if (newType === 'calculated') calc = checkCalc(has('calc') ? changes.calc : current.calc, { id: attributeId, name }, all);
 
   validateAttributeShape({
     name,
@@ -362,6 +387,7 @@ export async function editAttribute(
       options,
       is_required: isRequired,
       display_order: changes.display_order ?? current.display_order,
+      calc,
       group_name: changes.group_name !== undefined ? normalizeGroupName(changes.group_name) ?? '' : undefined,
     },
     kind,

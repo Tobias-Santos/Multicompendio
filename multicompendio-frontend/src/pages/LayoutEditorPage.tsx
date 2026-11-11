@@ -18,7 +18,7 @@ import '../layoutEditor.css';
 
 const MIN_FIT = 7 / 9.2;
 
-const toLayoutAttr = (a: SystemAttribute): LayoutAttribute => ({ id: a.id, name: a.name, type: a.data_type, group: a.group_name, order: a.display_order });
+const toLayoutAttr = (a: SystemAttribute): LayoutAttribute => ({ id: a.id, name: a.name, type: a.data_type === 'calculated' ? 'number' : a.data_type, group: a.group_name, order: a.display_order });
 
 // Mede cada campo com o texto de exemplo: a fonte encolhe até 7 pt; se mesmo assim não couber, o campo é marcado.
 function fitCards(root: HTMLElement): Set<string> {

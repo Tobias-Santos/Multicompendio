@@ -38,6 +38,7 @@ export interface CharacterDetail {
   };
   attributes: SystemAttribute[];
   values: CharacterValues;
+  computed: Record<string, number | null>; // valores dos atributos calculados (null: falta algum valor)
 }
 
 export interface CharacterInput {

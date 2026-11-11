@@ -5,7 +5,7 @@
 
 -- Tipo de dado que um atributo de sistema pode assumir.
 -- 'select' usa a coluna `options` (JSONB) para armazenar as escolhas possíveis.
-CREATE TYPE attribute_data_type AS ENUM ('number', 'text', 'longtext', 'boolean', 'select', 'text_number');
+CREATE TYPE attribute_data_type AS ENUM ('number', 'text', 'longtext', 'boolean', 'select', 'text_number', 'calculated');
 
 -- ------------------------------------------------------------
 -- RF37 — Usuários (cadastro e entrada na aplicação)
@@ -65,6 +65,7 @@ CREATE TABLE system_attributes (
     min_value       NUMERIC,                -- usado só quando data_type = 'number'
     max_value       NUMERIC,
     options         JSONB,                  -- usado só quando data_type = 'select', ex: ["Leve","Médio","Pesado"]
+    calc            JSONB,                  -- usado só quando data_type = 'calculated': { start, steps } (veja src/calcCore)
 
     is_required     BOOLEAN NOT NULL DEFAULT FALSE,
     display_order   INTEGER NOT NULL DEFAULT 0,

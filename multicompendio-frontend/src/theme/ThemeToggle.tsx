@@ -29,9 +29,9 @@ function MoonIcon({ className }: { className?: string }) {
   );
 }
 
-// Botão fixo no canto da tela que alterna entre o modo claro e o noturno.
+// Alterna entre o modo claro e o noturno.
 // A escolha fica guardada no navegador; sem escolha, acompanha o tema do sistema.
-export function ThemeToggle() {
+export function ThemeToggle({ inline = false }: { inline?: boolean }) {
   const [theme, setTheme] = useState<Theme>(readTheme);
 
   // Enquanto a pessoa não escolheu, acompanha mudanças do tema do sistema operacional.
@@ -67,7 +67,7 @@ export function ThemeToggle() {
       aria-checked={isDark}
       aria-label="Modo noturno"
       title={isDark ? 'Voltar para o modo claro' : 'Ativar o modo noturno'}
-      className="theme-toggle"
+      className={`theme-toggle${inline ? ' theme-toggle-inline' : ''}`}
       onClick={toggle}
     >
       <span className="theme-toggle-knob" aria-hidden="true" />

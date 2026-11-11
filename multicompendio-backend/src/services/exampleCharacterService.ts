@@ -38,10 +38,12 @@ export async function createExampleCharacter(userId: string): Promise<string | n
 
   const attributes = await attributesRepo.listAttributesBySystem(systemId);
   const idByKey = new Map(attributes.map((a) => [a.key, a.id]));
+  const calculated = new Set(attributes.filter((a) => a.data_type === 'calculated').map((a) => a.id));
   const values: Record<string, CharacterValue> = {};
   for (const [key, value] of Object.entries(exampleValues(user.rows[0].name))) {
     const id = idByKey.get(key);
     if (!id) throw new Error(`O personagem de exemplo usa o atributo "${key}", que não existe no sistema.`);
+    if (calculated.has(id)) continue; // atributo calculado: não recebe valor, o servidor calcula
     values[id] = value;
   }
 

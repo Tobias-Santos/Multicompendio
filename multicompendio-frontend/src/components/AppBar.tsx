@@ -1,3 +1,4 @@
+import { ThemeToggle } from '../theme/ThemeToggle';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { BrandLogo } from './BrandLogo';
@@ -30,6 +31,7 @@ export function AppBar() {
           <span className="user-box-name">
             Olá, <strong>{user.name}</strong>
           </span>
+          <ThemeToggle inline />
           <button
             type="button"
             className="ghost"

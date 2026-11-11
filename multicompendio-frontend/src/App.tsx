@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { AppLayout } from './components/AppLayout';
 import { HomePage } from './pages/HomePage';
 import { SystemPage } from './pages/SystemPage';
@@ -12,6 +12,11 @@ import { ItemCreatePage } from './pages/ItemCreatePage';
 import { LayoutEditorPage } from './pages/LayoutEditorPage';
 import { ThemeToggle } from './theme/ThemeToggle';
 import './styles.css';
+
+function FloatingThemeToggle() {
+  const { pathname } = useLocation();
+  return pathname === '/entrar' || pathname === '/criar-conta' ? <ThemeToggle /> : null;
+}
 
 export default function App() {
   return (
@@ -33,8 +38,8 @@ export default function App() {
         </Route>
       </Routes>
 
-      {/* Presente em todas as telas, inclusive entrada e cadastro */}
-      <ThemeToggle />
+      {/* Nas telas com conta, o botão fica na barra do topo; entrada e cadastro (sem barra) têm o botão flutuante */}
+      <FloatingThemeToggle />
     </>
   );
 }

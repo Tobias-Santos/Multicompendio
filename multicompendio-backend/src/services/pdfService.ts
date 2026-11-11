@@ -1,4 +1,5 @@
 import * as attributesRepo from '../repositories/attributesRepository';
+import { asNumberIfCalculated, withComputed } from './calcSupport';
 import { ValidationError } from '../errors';
 import { PdfOptions, buildBlankSheetPdf, buildCharacterPdf, buildItemPdf } from '../pdf';
 import { blockFrom } from '../pdf/items';
@@ -52,9 +53,9 @@ export async function characterPdf(id: string, userId: string, options: PdfOptio
       systemName: detail.character.system_name,
       characterName: detail.character.name,
       ownerName: detail.character.owner_name,
-      attributes: detail.attributes,
+      attributes: detail.attributes.map(asNumberIfCalculated),
       layout,
-      values: detail.values,
+      values: withComputed(detail.values, detail.computed),
       inventory,
       story,
     },
@@ -68,7 +69,7 @@ export async function blankSheetPdf(systemId: string, userId: string, options: P
   const system = await loadVisibleSystem(systemId, userId);
   const attributes = await attributesRepo.listAttributesBySystem(systemId);
   const layout = (await resolveLayout(system, userId)).layout;
-  const out = await buildBlankSheetPdf(system.name, attributes, layout, options);
+  const out = await buildBlankSheetPdf(system.name, attributes.map(asNumberIfCalculated), layout, options);
   return { buffer: out.buffer, filename: fileName(system.name, 'ficha em branco'), cut: [] };
 }
 

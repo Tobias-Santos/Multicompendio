@@ -54,6 +54,7 @@ export interface CharacterDetail {
   };
   attributes: SystemAttribute[];
   values: CharacterValues;
+  computed: Record<string, number | null>; // valores dos atributos calculados (id → número, ou null se faltar algum valor)
 }
 
 export interface CharacterInput {

@@ -18,7 +18,7 @@ export interface LayoutView {
 }
 
 export const toLayoutAttributes = (attrs: SystemAttribute[]): LayoutAttribute[] =>
-  attrs.map((a) => ({ id: a.id, name: a.name, type: a.data_type, group: a.group_name, order: a.display_order }));
+  attrs.map((a) => ({ id: a.id, name: a.name, type: a.data_type === 'calculated' ? 'number' : a.data_type, group: a.group_name, order: a.display_order }));
 
 // Primeiro passo do layout curado do D&D 5e: o layout automático com formato e altura próprios nos números de destaque.
 // (O desenho completo, parecido com a ficha oficial, é um trabalho de design à parte.)

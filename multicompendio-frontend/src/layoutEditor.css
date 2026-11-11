@@ -48,6 +48,10 @@
 
 /* ---------- campos e botões: neutraliza os estilos globais ---------- */
 .le input,
+.le select[aria-label="Zoom da folha"] {
+  min-width: 4.8rem;
+}
+
 .le select {
   display: inline-block;
   width: auto;

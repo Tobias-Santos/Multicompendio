@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { CalcDef, describeCalc } from '../calcCore';
+import { ATTRIBUTE_TYPE_OPTION_LABELS, typesFor } from '../constants/attributeTypes';
+import { CalcBuilder, calcProblem } from './CalcBuilder';
 import { AttributeDataType, AttributeInput, SystemAttribute } from '../types/system';
 import { updateAttribute, deleteAttribute, FieldKind } from '../api/systemsApi';
 import {
@@ -30,6 +33,7 @@ interface Draft {
   max: string;
   options: string;
   required: boolean;
+  calc: CalcDef | null;
 }
 
 const toDraft = (attr: SystemAttribute): Draft => ({
@@ -40,10 +44,12 @@ const toDraft = (attr: SystemAttribute): Draft => ({
   max: attr.max_value === null || attr.max_value === undefined ? '' : String(Number(attr.max_value)),
   options: attr.options ? attr.options.join(', ') : '',
   required: attr.is_required,
+  calc: attr.calc ?? null,
 });
 
 export function AttributesTable({ systemId, attributes, onChanged, onDeleted, readOnly = false, kind = 'attribute' }: Props) {
   const word = kind === 'item_field' ? 'campo' : 'atributo';
+  const nameOf = (id: string) => attributes.find((a) => a.id === id)?.name ?? '?';
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
@@ -81,6 +87,12 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted, re
       data_type: draft.type,
       is_required: draft.required,
     };
+    if (draft.type === 'calculated') {
+      const problem = calcProblem(draft.calc, attributes, { id: attr.id, name: draft.name });
+      if (problem) { setEditError(problem); return; }
+      changes.calc = draft.calc;
+      changes.is_required = false;
+    }
     if (hasNumberRange(draft.type)) {
       const min = parse(draft.min, 'mínimo');
       const max = parse(draft.max, 'máximo');
@@ -152,20 +164,26 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted, re
               </label>
             )}
 
-            <label>
+            <label className={draft.type === 'calculated' ? 'attribute-edit-wide' : undefined}>
               <span>Tipo</span>
               <select
                 value={draft.type}
                 title={`Tipo de valor que este ${word} guarda. Só dá para mudar o tipo enquanto nada estiver usando este ${word}.`}
                 onChange={(e) => patch({ type: e.target.value as AttributeDataType })}
               >
-                {ATTRIBUTE_TYPE_ORDER.map((type) => (
+                {typesFor(kind === 'item_field').map((type) => (
                   <option key={type} value={type}>
-                    {ATTRIBUTE_TYPE_LABELS[type]}
+                    {ATTRIBUTE_TYPE_OPTION_LABELS[type]}
                   </option>
                 ))}
               </select>
             </label>
+
+            {draft.type === 'calculated' && (
+              <div className="attribute-edit-wide">
+                <CalcBuilder value={draft.calc} onChange={(calc) => patch({ calc })} attributes={attributes} selfId={attr.id} selfName={draft.name} />
+              </div>
+            )}
 
             {hasNumberRange(draft.type) && (
               <>
@@ -203,10 +221,12 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted, re
               </label>
             )}
 
-            <label className="checkbox" title={`Marque se o preenchimento deste ${word} for obrigatório.`}>
-              <input type="checkbox" checked={draft.required} onChange={(e) => patch({ required: e.target.checked })} />
-              obrigatório
-            </label>
+            {draft.type !== 'calculated' && (
+              <label className="checkbox" title={`Marque se o preenchimento deste ${word} for obrigatório.`}>
+                <input type="checkbox" checked={draft.required} onChange={(e) => patch({ required: e.target.checked })} />
+                obrigatório
+              </label>
+            )}
 
             {editError && <p className="error attribute-edit-wide" role="alert">{editError}</p>}
 
@@ -236,6 +256,7 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted, re
         // Só as colunas que fazem sentido para o tipo: faixa para números, opções para listas.
         const showRange = hasNumberRange(group.type);
         const showOptions = group.type === 'select';
+        const showCalc = group.type === 'calculated';
         const columns = 2 + (showRange ? 1 : 0) + (showOptions ? 1 : 0) + (readOnly ? 0 : 1);
 
         return (
@@ -247,7 +268,7 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted, re
                 <th>Nome</th>
                 {showRange && <th>Mínimo / Máximo</th>}
                 {showOptions && <th>Opções</th>}
-                <th>Obrigatório</th>
+                <th>{showCalc ? 'Conta' : 'Obrigatório'}</th>
                 {!readOnly && <th></th>}
               </tr>
             </thead>
@@ -263,7 +284,7 @@ export function AttributesTable({ systemId, attributes, onChanged, onDeleted, re
                       </td>
                     )}
                     {showOptions && <td>{attr.options ? attr.options.join(', ') : '—'}</td>}
-                    <td>{attr.is_required ? 'sim' : 'não'}</td>
+                    <td>{showCalc ? (attr.calc ? describeCalc(attr.calc, nameOf) : '—') : attr.is_required ? 'sim' : 'não'}</td>
                     {!readOnly && (
                       <td className="attribute-actions">
                         <button type="button" onClick={() => (editing ? cancelEdit() : startEdit(attr))}>
